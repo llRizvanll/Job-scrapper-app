@@ -42,6 +42,9 @@ export function Header() {
             <Link to="/employers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
               For employers
             </Link>
+            <Link to="/freelancer-hub" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+              Freelancer Hub
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -83,6 +86,9 @@ export function Header() {
             </Link>
             <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
               For employers
+            </Link>
+            <Link to="/freelancer-hub" className="text-lg font-medium text-gray-900 py-2">
+              Freelancer Hub
             </Link>
             <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
               Pricing

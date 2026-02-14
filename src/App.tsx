@@ -7,6 +7,7 @@ import { LoginPage } from '@/presentation/pages/LoginPage';
 import { AboutPage } from '@/presentation/pages/AboutPage';
 import { BlogPage } from '@/presentation/pages/BlogPage';
 import { BlogDetailsPage } from '@/presentation/pages/BlogDetailsPage';
+import { FreelancerHubPage } from '@/presentation/pages/FreelancerHubPage';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/" element={<JobsPage />} />
         <Route path="/job-seekers" element={<JobSeekersPage />} />
         <Route path="/employers" element={<EmployersPage />} />
+        <Route path="/freelancer-hub" element={<FreelancerHubPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
