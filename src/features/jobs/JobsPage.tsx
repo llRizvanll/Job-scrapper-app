@@ -22,10 +22,12 @@ export function JobsPage() {
     return (
       <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-100">
         <Header />
-        <JobDetails 
-          job={vm.selectedJob} 
-          onBack={() => vm.setSelectedJob(null)} 
-        />
+        <div className="pt-20">
+          <JobDetails 
+            job={vm.selectedJob} 
+            onBack={() => vm.setSelectedJob(null)} 
+          />
+        </div>
         <Footer />
       </div>
     );
@@ -104,6 +106,7 @@ export function JobsPage() {
                  </div>
 
                  <JobList 
+                   key={`jobs-${vm.searchQuery}-${(vm.filter.workplaceTypes ?? []).join(',')}-${(vm.filter.jobTypes ?? []).join(',')}-${(vm.filter.locations ?? []).join(',')}`}
                    jobs={vm.jobs}
                    loading={vm.loading}
                    hasMore={vm.hasMore}

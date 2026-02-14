@@ -80,6 +80,7 @@ export function useJobsPageViewModel() {
     setPage(nextPage);
   }, [filteredJobs, hasMore, loading, page, jobsPerBatch]);
 
+  // Sync displayed results whenever filters, search, or raw jobs change
   useEffect(() => {
     setDisplayedJobs(filteredJobs.slice(0, jobsPerBatch));
     setHasMore(filteredJobs.length > jobsPerBatch);

@@ -649,6 +649,9 @@ export class JobScraperAdapter implements IJobScraperGateway {
     return jobs;
   }
 
+  /** Category treated as remote-first; these sources are scraped first and listed first in results. */
+  private static readonly REMOTE_FIRST_CATEGORY = 'Remote Specialists';
+
   async scrapeJobs(
     config: ScrapeConfig,
     onProgress?: ScrapeProgressCallback
@@ -656,10 +659,13 @@ export class JobScraperAdapter implements IJobScraperGateway {
     this.abortController = new AbortController();
 
     const allSources = [...this.builtInSources, ...this.getCustomSources()];
-    const sourcesToScrape =
+    let sourcesToScrape =
       config.selectedSources.length > 0
         ? allSources.filter((s) => config.selectedSources.includes(s.id))
         : allSources.filter((s) => s.enabled);
+
+    // Remote-first: scrape remote specialist sources first, then the rest
+    sourcesToScrape = this.orderSourcesRemoteFirst(sourcesToScrape);
 
     const allJobs: Job[] = [];
     let completedCount = 0;
@@ -687,12 +693,33 @@ export class JobScraperAdapter implements IJobScraperGateway {
     await Promise.all(tasks);
     await this.workerPool.drain();
 
+    const remoteFirstNames = new Set(
+      sourcesToScrape
+        .filter((s) => s.category === JobScraperAdapter.REMOTE_FIRST_CATEGORY)
+        .map((s) => s.name)
+    );
+
     allJobs.sort((a, b) => {
+      const aRemoteFirst = remoteFirstNames.has(a.source);
+      const bRemoteFirst = remoteFirstNames.has(b.source);
+      if (aRemoteFirst && !bRemoteFirst) return -1;
+      if (!aRemoteFirst && bRemoteFirst) return 1;
       const dateA = new Date(a.postedAt).getTime();
       const dateB = new Date(b.postedAt).getTime();
       return dateB - dateA;
     });
 
     return allJobs;
+  }
+
+  /** Puts Remote Specialists (and other remote-first) sources first, then the rest. */
+  private orderSourcesRemoteFirst(sources: JobSource[]): JobSource[] {
+    const remoteFirst = sources.filter(
+      (s) => s.category === JobScraperAdapter.REMOTE_FIRST_CATEGORY
+    );
+    const rest = sources.filter(
+      (s) => s.category !== JobScraperAdapter.REMOTE_FIRST_CATEGORY
+    );
+    return [...remoteFirst, ...rest];
   }
 }
