@@ -14,9 +14,9 @@ export function Header() {
             <div className="w-8 h-8 bg-[#5D3FD3] rounded-full flex items-center justify-center text-white font-bold text-lg">
               R
             </div>
-            <span className="text-xl font-bold text-gray-900 tracking-tight">
-              remote<span className="text-gray-400 font-normal">.com/jobs</span>
-            </span>
+            <a href="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
+              loadmore<span className="text-gray-400 font-normal">.in</span>
+            </a>
           </div>
 
           {/* Desktop Navigation */}

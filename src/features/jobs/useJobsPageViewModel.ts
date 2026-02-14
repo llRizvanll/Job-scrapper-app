@@ -2,7 +2,7 @@
  * ViewModel - Jobs Page
  * Orchestrates use cases and manages presentation state
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import type { Job, JobFilter, JobSource, ScrapeProgress } from '@/core/entities';
 import { getConfig } from '@/config';
 import {
@@ -55,11 +55,11 @@ export function useJobsPageViewModel() {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  const filteredJobs = filterJobsUseCase.execute({
+  const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
     filter,
     searchQuery,
-  }).filteredJobs;
+  }).filteredJobs, [jobs, filter, searchQuery]);
 
   const stats = computeStatsUseCase.execute({ jobs: filteredJobs }).stats;
 
