@@ -3,6 +3,7 @@ export { useJobsPageViewModel } from './useJobsPageViewModel';
 
 export { SearchBar } from './SearchBar';
 export { StatCard } from './StatCard';
+export { JobAnalyticsReport } from './JobAnalyticsReport';
 
 export { SourceSelector } from './SourceSelector';
 export { CustomSourceAdder } from './CustomSourceAdder';

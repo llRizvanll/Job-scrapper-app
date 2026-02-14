@@ -15,4 +15,13 @@ export type {
 } from './ManageCustomSourcesUseCase';
 
 export { ComputeStatsUseCase } from './ComputeStatsUseCase';
-export type { JobStats, ComputeStatsInput, ComputeStatsOutput } from './ComputeStatsUseCase';
+export type {
+  JobStats,
+  JobAnalyticsReport,
+  ComputeStatsInput,
+  ComputeStatsOutput,
+  SourceBreakdown,
+  CompanyBreakdown,
+  CategoryBreakdown,
+  JobTypeBreakdown,
+} from './ComputeStatsUseCase';

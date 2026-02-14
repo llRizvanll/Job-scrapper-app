@@ -11,6 +11,7 @@ import { JobFilters } from '@/presentation/components/landing/JobFilters';
 import { JobList } from '@/presentation/components/landing/JobList';
 import { Footer } from '@/presentation/components/landing/Footer';
 import { JobDetails } from '@/presentation/components/landing/JobDetails';
+import { JobAnalyticsReport } from './JobAnalyticsReport';
 
 import { Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
@@ -93,6 +94,11 @@ export function JobsPage() {
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
                 <span>Updating jobs… {vm.scrapeProgress.current} / {vm.scrapeProgress.total} sources</span>
               </div>
+            )}
+
+            {/* Analytics report: companies and jobs breakdown */}
+            {vm.hasScraped && vm.filteredJobs.length > 0 && vm.report && (
+              <JobAnalyticsReport report={vm.report} lastUpdated={vm.lastUpdated ?? undefined} />
             )}
 
             <div className="flex flex-col lg:flex-row gap-8">

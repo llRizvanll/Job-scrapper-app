@@ -114,7 +114,7 @@ export function useJobsPageViewModel() {
     searchQuery,
   }).filteredJobs, [jobs, filter, searchQuery]);
 
-  const stats = computeStatsUseCase.execute({ jobs: filteredJobs }).stats;
+  const { stats, report } = computeStatsUseCase.execute({ jobs: filteredJobs });
 
   const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
@@ -241,6 +241,7 @@ export function useJobsPageViewModel() {
     hasMore,
     loaderRef,
     stats,
+    report,
     defaultKeywords,
     handleScrape,
     handleKeywordSelect,
