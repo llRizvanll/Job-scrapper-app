@@ -45,6 +45,9 @@ export function Header() {
             <Link to="/freelancer-hub" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
               Freelancer Hub
             </Link>
+            <Link to="/contracts" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+              Contracts
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -89,6 +92,9 @@ export function Header() {
             </Link>
             <Link to="/freelancer-hub" className="text-lg font-medium text-gray-900 py-2">
               Freelancer Hub
+            </Link>
+            <Link to="/contracts" className="text-lg font-medium text-gray-900 py-2">
+              Contracts
             </Link>
             <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
               Pricing

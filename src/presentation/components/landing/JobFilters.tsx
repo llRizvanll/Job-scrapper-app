@@ -1,4 +1,4 @@
-import { Search, ChevronDown, Monitor, MapPin, Globe, DollarSign } from 'lucide-react';
+import { Search, ChevronDown, Monitor, MapPin, Globe, DollarSign, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -259,6 +259,35 @@ export function JobFilters({
                  </div>
               </PopoverContent>
             </Popover>
+
+
+            {/* Sort By - Push to right or keep with filters */}
+            <div className="ml-auto">
+               <Popover>
+                  <PopoverTrigger asChild>
+                     <Button variant="ghost" className="h-10 text-gray-500 hover:text-gray-900 font-medium text-[13px]">
+                        Sort by: <span className="text-gray-900 ml-1">{filter.sortBy === 'recent' ? 'Most recent' : 'Relevance'}</span>
+                        <ChevronDown className="w-3 h-3 ml-2 text-gray-400" />
+                     </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[180px] p-1" align="end">
+                     <div 
+                        className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer ${filter.sortBy !== 'recent' ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50'}`}
+                        onClick={() => setFilter({ ...filter, sortBy: 'relevant' })}
+                     >
+                        <span className="text-sm font-medium">Relevance</span>
+                        {filter.sortBy !== 'recent' && <Check className="w-4 h-4" />}
+                     </div>
+                     <div 
+                        className={`flex items-center justify-between px-3 py-2 rounded-md cursor-pointer ${filter.sortBy === 'recent' ? 'bg-blue-50 text-blue-700' : 'hover:bg-slate-50'}`}
+                        onClick={() => setFilter({ ...filter, sortBy: 'recent' })}
+                     >
+                        <span className="text-sm font-medium">Most recent</span>
+                        {filter.sortBy === 'recent' && <Check className="w-4 h-4" />}
+                     </div>
+                  </PopoverContent>
+               </Popover>
+            </div>
           </div>
         </div>
       </div>

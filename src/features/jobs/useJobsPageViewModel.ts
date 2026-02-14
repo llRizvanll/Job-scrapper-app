@@ -21,6 +21,7 @@ const DEFAULT_FILTER: JobFilter = {
   locations: [],
   postedWithin: '',
   sources: [],
+  sortBy: 'recent', // specific user request: "based on recent ones" usually implies default too, or at least the option. Let's default to recent as it's often preferred for job boards.
 };
 
 // Load from cache on init so first paint shows cached jobs

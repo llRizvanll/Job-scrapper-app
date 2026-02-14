@@ -7,4 +7,5 @@ export interface JobFilter {
   salaryCurrency?: string;
   postedWithin: string;
   sources: string[];
+  sortBy?: 'recent' | 'relevant';
 }

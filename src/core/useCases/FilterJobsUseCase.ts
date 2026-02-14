@@ -103,6 +103,15 @@ export class FilterJobsUseCase {
       return true;
     });
 
+    // 8. Sorting
+    if (filter.sortBy === 'recent') {
+      filteredJobs.sort((a, b) => {
+        const dateA = new Date(a.postedAt).getTime();
+        const dateB = new Date(b.postedAt).getTime();
+        return dateB - dateA;
+      });
+    }
+
     return { filteredJobs };
   }
 }
