@@ -1,103 +1,105 @@
-import { useState } from 'react';
-import { Menu, X, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Menu, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
+    <header 
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 py-3' : 'bg-transparent py-5'
+      }`}
+    >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex-shrink-0 flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-[#5D3FD3] rounded-full flex items-center justify-center text-white font-bold text-lg">
               R
             </div>
-            <a href="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
+            <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
               loadmore<span className="text-gray-400 font-normal">.in</span>
-            </a>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8 items-center">
-            <a href="#" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          <nav className="hidden md:flex items-center gap-8">
+            <Link to="/job-seekers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
               For job seekers
-            </a>
-            <a href="#" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            </Link>
+            <Link to="/employers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
               For employers
-            </a>
-            <a href="#" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Pricing
-            </a>
+            </Link>
           </nav>
 
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-[#3b82f6] hover:text-[#2563eb] hover:bg-blue-50 font-medium">
-              <Plus className="w-4 h-4 mr-2" />
-              Post a job
-            </Button>
-            <Button className="bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full px-6 font-medium shadow-sm hover:shadow transition-all duration-200">
-              Sign up
-            </Button>
-            <Button variant="outline" className="rounded-full px-6 border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900 font-medium">
-              Log in
-            </Button>
+          {/* Actions */}
+          <div className="hidden md:flex items-center gap-4">
+            <Link to="/employers">
+              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                Post a job
+              </Button>
+            </Link>
+            <div className="h-4 w-px bg-gray-200"></div>
+            <Link to="/sign-up">
+              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                Sign up
+              </Button>
+            </Link>
+            <Link to="/login">
+              <Button className="bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full px-5 text-[15px] font-medium transition-colors shadow-sm shadow-blue-500/20">
+                Log in
+              </Button>
+            </Link>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-            >
-              <span className="sr-only">Open main menu</span>
-              {isMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
-          </div>
+          {/* Mobile Menu Button */}
+          <button 
+            className="md:hidden text-gray-600"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      {isMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white absolute w-full shadow-lg">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <a
-              href="#"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            >
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 p-4 shadow-lg animate-in slide-in-from-top-5">
+          <nav className="flex flex-col gap-4">
+            <Link to="/job-seekers" className="text-lg font-medium text-gray-900 py-2">
               For job seekers
-            </a>
-            <a
-              href="#"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            >
+            </Link>
+            <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
               For employers
-            </a>
-            <a
-              href="#"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-            >
+            </Link>
+            <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
               Pricing
-            </a>
-          </div>
-          <div className="pt-4 pb-4 border-t border-gray-100 px-4 space-y-3">
-            <Button variant="ghost" className="w-full justify-start text-[#3b82f6]">
-              <Plus className="w-4 h-4 mr-2" />
+            </Link>
+            <hr className="border-gray-100" />
+            <Link to="/employers" className="text-lg font-medium text-gray-600 py-2">
               Post a job
-            </Button>
-            <Button className="w-full bg-[#0055FF] text-white rounded-full">
+            </Link>
+            <Link to="/sign-up" className="text-lg font-medium text-gray-600 py-2">
               Sign up
-            </Button>
-            <Button variant="outline" className="w-full rounded-full">
-              Log in
-            </Button>
-          </div>
+            </Link>
+            <Link to="/login">
+              <Button className="w-full bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full">
+                Log in
+              </Button>
+            </Link>
+          </nav>
         </div>
       )}
     </header>

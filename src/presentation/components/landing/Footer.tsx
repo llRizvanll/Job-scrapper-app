@@ -1,4 +1,5 @@
 import { Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function Footer() {
   return (
@@ -7,9 +8,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
           {/* Brand Column */}
           <div className="space-y-6">
-            <a href="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
+            <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
                 loadmore<span className="text-gray-400 font-normal">.in</span>
-            </a>
+            </Link>
             <div className="flex items-center gap-4">
                {/* Social icons remain unchanged */}
                <a href="#" className="p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-gray-200 transition-colors">
@@ -28,10 +29,10 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Rebranding</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">About LoadMore</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Careers</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Blog</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Press</a></li>
+              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">About LoadMore</Link></li>
+              <li><Link to="/job-seekers" className="text-[15px] text-gray-500 hover:text-gray-900">Careers</Link></li>
+              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">Blog</Link></li>
+              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">Press</Link></li>
             </ul>
           </div>
 
@@ -39,9 +40,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Job Seekers</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Sign up with LoadMore</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Browse remote jobs</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Job seeker help docs</a></li>
+              <li><Link to="/sign-up" className="text-[15px] text-gray-500 hover:text-gray-900">Sign up with LoadMore</Link></li>
+              <li><Link to="/" className="text-[15px] text-gray-500 hover:text-gray-900">Browse remote jobs</Link></li>
+              <li><Link to="/job-seekers" className="text-[15px] text-gray-500 hover:text-gray-900">Job seeker help docs</Link></li>
             </ul>
           </div>
 
@@ -49,9 +50,9 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Employers</h3>
             <ul className="space-y-3">
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Post a remote job</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Employer help docs</a></li>
-              <li><a href="#" className="text-[15px] text-gray-500 hover:text-gray-900">Pricing</a></li>
+              <li><Link to="/employers" className="text-[15px] text-gray-500 hover:text-gray-900">Post a remote job</Link></li>
+              <li><Link to="/employers" className="text-[15px] text-gray-500 hover:text-gray-900">Employer help docs</Link></li>
+              <li><Link to="/employers" className="text-[15px] text-gray-500 hover:text-gray-900">Pricing</Link></li>
             </ul>
           </div>
         </div>
