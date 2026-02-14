@@ -1,18 +1,19 @@
 import type { Job } from '@/core/entities';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  Share2, 
-  Bookmark, 
-  Zap, 
-  Globe, 
-  MapPin, 
-  Clock, 
+import {
+  ArrowLeft,
+  Share2,
+  Bookmark,
+  Zap,
+  Globe,
+  MapPin,
+  Clock,
   Flag,
-  Building2
+  Building2,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getJobAvatarStyle, getJobTitleInitial } from './jobAvatar';
 
 interface JobDetailsProps {
   job: Job;
@@ -53,8 +54,8 @@ export function JobDetails({ job, onBack }: JobDetailsProps) {
                      className="w-16 h-16 rounded-xl object-contain border border-slate-100 bg-white"
                    />
                 ) : (
-                   <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-2xl">
-                      {job.company.charAt(0).toUpperCase()}
+                   <div className={`w-16 h-16 rounded-xl flex items-center justify-center font-bold text-2xl border border-white/80 shadow-sm ${getJobAvatarStyle(job.title).bg} ${getJobAvatarStyle(job.title).text}`}>
+                      {getJobTitleInitial(job.title, job.company)}
                    </div>
                 )}
              </div>

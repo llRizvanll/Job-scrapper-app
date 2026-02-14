@@ -3,7 +3,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { Globe, DollarSign, ChevronRight, Briefcase, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { getJobAvatarStyle, getJobTitleInitial } from './jobAvatar';
 
 interface JobCardProps {
   job: Job;
@@ -12,6 +13,8 @@ interface JobCardProps {
 
 export function JobCard({ job, onSelect }: JobCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const avatarStyle = useMemo(() => getJobAvatarStyle(job.title), [job.title]);
+  const titleInitial = useMemo(() => getJobTitleInitial(job.title, job.company), [job.title, job.company]);
 
   const formatTimeAgo = (dateString: string) => {
     try {
@@ -52,8 +55,8 @@ export function JobCard({ job, onSelect }: JobCardProps) {
                }}
              />
            ) : null}
-           <div className={`w-12 h-12 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100/50 items-center justify-center text-blue-600 font-bold text-lg shadow-sm ${job.companyLogo ? 'hidden' : 'flex'}`}>
-              {job.company.charAt(0)}
+           <div className={`w-12 h-12 rounded-lg border border-white/80 shadow-sm items-center justify-center font-bold text-lg ${job.companyLogo ? 'hidden' : 'flex'} ${avatarStyle.bg} ${avatarStyle.text}`}>
+              {titleInitial}
            </div>
         </div>
 

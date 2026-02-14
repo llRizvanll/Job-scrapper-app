@@ -5,6 +5,7 @@ import { EmployersPage } from '@/presentation/pages/EmployersPage';
 import { SignUpPage } from '@/presentation/pages/SignUpPage';
 import { LoginPage } from '@/presentation/pages/LoginPage';
 import { AboutPage } from '@/presentation/pages/AboutPage';
+import { BlogPage } from '@/presentation/pages/BlogPage';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/blog" element={<BlogPage />} />
       </Routes>
       <Toaster position="top-right" richColors />
     </>

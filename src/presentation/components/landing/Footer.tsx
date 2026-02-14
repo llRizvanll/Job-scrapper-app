@@ -31,7 +31,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">About LoadMore</Link></li>
               <li><Link to="/job-seekers" className="text-[15px] text-gray-500 hover:text-gray-900">Careers</Link></li>
-              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">Blog</Link></li>
+              <li><Link to="/blog" className="text-[15px] text-gray-500 hover:text-gray-900">Blog</Link></li>
               <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">Press</Link></li>
             </ul>
           </div>
