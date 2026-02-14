@@ -38,7 +38,7 @@ export function useJobsPageViewModel() {
   const [loading, setLoading] = useState(false);
   const [hasScraped, setHasScraped] = useState(() => getInitialJobs().length > 0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeKeywords, setActiveKeywords] = useState<string[]>([defaultKeywords[0]]);
+  const [activeKeywords, setActiveKeywords] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [showSources, setShowSources] = useState(false);
@@ -82,7 +82,7 @@ export function useJobsPageViewModel() {
       try {
         const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
           {
-            keywords: [defaultKeywords[0]],
+            keywords: [], // No keyword filter: fetch all jobs; user filters client-side after load
             selectedSources: sourcesToUse,
             maxJobsPerSource: 100,
           },
@@ -94,6 +94,7 @@ export function useJobsPageViewModel() {
           JobCacheService.saveJobs(scrapedJobs);
           setLastUpdated(new Date());
           setHasScraped(true);
+          setShowFilters(true); // Show filter options once data is loaded
         }
       } catch {
         // Keep existing jobs (cache)
@@ -169,7 +170,7 @@ export function useJobsPageViewModel() {
     try {
       const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
         {
-          keywords: activeKeywords,
+          keywords: [], // Always fetch all jobs; user filters via search & filters after load
           selectedSources: sourcesToUse,
           maxJobsPerSource: 100,
         },
@@ -189,7 +190,7 @@ export function useJobsPageViewModel() {
     } finally {
       setLoading(false);
     }
-  }, [activeKeywords, selectedSources, loading]);
+  }, [selectedSources, loading]);
 
   const handleKeywordSelect = useCallback((keyword: string) => {
     setActiveKeywords([keyword]);

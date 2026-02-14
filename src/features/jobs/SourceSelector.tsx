@@ -51,6 +51,14 @@ const categoryIcons: Record<string, React.ReactNode> = {
   QA: <CheckSquare className="w-4 h-4" />,
   Security: <Lock className="w-4 h-4" />,
   Senior: <Star className="w-4 h-4" />,
+  'ATS - Greenhouse': <Layers className="w-4 h-4" />,
+  'ATS - Lever': <Layers className="w-4 h-4" />,
+  'ATS - Ashby': <Layers className="w-4 h-4" />,
+  'ATS - Workable': <Layers className="w-4 h-4" />,
+  'ATS - SmartRecruiters': <Layers className="w-4 h-4" />,
+  'ATS - Breezy HR': <Layers className="w-4 h-4" />,
+  'ATS - BambooHR': <Layers className="w-4 h-4" />,
+  'ATS - Teamtailor': <Layers className="w-4 h-4" />,
 };
 
 export function SourceSelector({ sources, selectedSources, onChange }: SourceSelectorProps) {

@@ -15,7 +15,7 @@ export class FilterJobsUseCase {
     const { jobs, filter, searchQuery } = input;
 
     const filteredJobs = jobs.filter((job) => {
-      // 1. Search Query (Title, Company, Tags)
+      // 1. Search Query (Title, Company, Tags) – client-side filter after data loaded
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matches =
@@ -23,6 +23,13 @@ export class FilterJobsUseCase {
           job.company.toLowerCase().includes(query) ||
           job.tags.some((tag) => tag.toLowerCase().includes(query));
         if (!matches) return false;
+      }
+
+      // 1b. Keyword filter (multi-keyword OR: match any)
+      if (filter.keywords && filter.keywords.length > 0) {
+        const searchText = `${job.title} ${job.company} ${job.description || ''} ${(job.tags || []).join(' ')}`.toLowerCase();
+        const hasKeyword = filter.keywords.some((kw) => searchText.includes(kw.toLowerCase()));
+        if (!hasKeyword) return false;
       }
 
       // 2. Job Type (Multi-select OR)

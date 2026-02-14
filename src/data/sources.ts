@@ -1,6 +1,7 @@
 import type { JobSource } from '@/core/entities';
+import { buildATSSources } from './atsConfig';
 
-export const JOB_SOURCES: JobSource[] = [
+const LEGACY_JOB_SOURCES: JobSource[] = [
   // ========== THE BIG THREE (High Volume) ==========
   {
     id: 'linkedin',
@@ -731,6 +732,15 @@ export const JOB_SOURCES: JobSource[] = [
     category: 'Community',
     description: 'HN Who is Hiring'
   },
+  {
+    id: 'hn-jobs',
+    name: 'Hacker News Jobs (YC)',
+    url: 'https://news.ycombinator.com/jobs',
+    type: 'html',
+    enabled: true,
+    category: 'Community',
+    description: 'Jobs at YC startups from news.ycombinator.com/jobs'
+  },
 
   // ========== JOBS COLLIDER (Additional Categories) ==========
   {
@@ -818,6 +828,9 @@ export const JOB_SOURCES: JobSource[] = [
   },
 ];
 
+/** All job sources: legacy (RSS/API/HTML) + ATS-derived (Greenhouse, Lever, Ashby, etc.). */
+export const JOB_SOURCES: JobSource[] = [...LEGACY_JOB_SOURCES, ...buildATSSources()];
+
 export const getEnabledSources = (): JobSource[] => 
   JOB_SOURCES.filter(s => s.enabled);
 
@@ -848,4 +861,12 @@ export const SOURCE_CATEGORIES = [
   'QA',
   'Security',
   'Senior',
+  'ATS - Greenhouse',
+  'ATS - Lever',
+  'ATS - Ashby',
+  'ATS - Workable',
+  'ATS - SmartRecruiters',
+  'ATS - Breezy HR',
+  'ATS - BambooHR',
+  'ATS - Teamtailor',
 ];

@@ -10,9 +10,14 @@ export interface AppConfig {
     cacheMaxSize: number;
     requestTimeoutMs: number;
     maxRetries: number;
+    /** Delay in ms between requests (rate limit). Use 2000 for ~once per 2s; 24h cache recommended. */
+    rateLimitDelayMs: number;
   };
   keywords: {
+    /** Not used for scraping; scrape fetches all jobs. */
     default: string[];
+    /** Optional suggestions for client-side filter (e.g. quick keyword chips). */
+    suggested?: string[];
   };
   corsProxies: string[];
 }
@@ -21,22 +26,20 @@ const DEFAULT_CONFIG: AppConfig = {
   scraping: {
     jobsPerBatch: 30,
     maxConcurrency: 8,
-    cacheTtlMs: 15 * 60 * 1000,
-    cacheMaxSize: 100,
+    cacheTtlMs: 24 * 60 * 60 * 1000, // 24h – run once per day to update
+    cacheMaxSize: 500,
     requestTimeoutMs: 10000,
     maxRetries: 2,
+    rateLimitDelayMs: 2000,
   },
   keywords: {
-    default: [
+    default: [], // No keyword filter at scrape time; load all jobs. User filters client-side via search & filters.
+    suggested: [
       'software engineer',
       'full stack developer',
       'frontend developer',
       'backend developer',
       'devops engineer',
-      'data engineer',
-      'cloud engineer',
-      'security engineer',
-      'mobile developer',
       'product manager',
       'react native',
     ],

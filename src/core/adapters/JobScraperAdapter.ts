@@ -1,10 +1,11 @@
 /**
  * Infrastructure Adapter - Job Scraper
- * Implements IJobScraperGateway using fetch, RSS/JSON/HTML parsing
+ * Implements IJobScraperGateway using fetch, RSS/JSON/HTML parsing and ATS-specific scraping.
  */
 import type { Job, JobSource, ScrapeConfig } from '../entities';
 import type { IJobScraperGateway, ScrapeProgressCallback } from '../ports';
 import { getConfig } from '@/config';
+import { ATS_CONFIG } from '@/data/atsConfig';
 
 // Fast in-memory cache with LRU eviction
 class FastCache {
@@ -37,6 +38,21 @@ class FastCache {
     }
     this.cache.set(key, { jobs, timestamp: Date.now() });
   }
+}
+
+// Rate limiter: delay between requests to be respectful to job boards
+function createRateLimiter(delayMs: number): { wait: () => Promise<void> } {
+  let lastRequest = 0;
+  return {
+    async wait(): Promise<void> {
+      const now = Date.now();
+      const elapsed = now - lastRequest;
+      if (elapsed < delayMs) {
+        await new Promise((r) => setTimeout(r, delayMs - elapsed));
+      }
+      lastRequest = Date.now();
+    },
+  };
 }
 
 // Worker pool for parallel scraping
@@ -91,12 +107,24 @@ export interface JobScraperAdapterDeps {
   corsProxies?: string[];
 }
 
+const DEFAULT_REQUEST_HEADERS: Record<string, string> = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.5',
+  'Accept-Encoding': 'gzip, deflate, br',
+  DNT: '1',
+  Connection: 'keep-alive',
+  'Upgrade-Insecure-Requests': '1',
+};
+
 export class JobScraperAdapter implements IJobScraperGateway {
   private readonly builtInSources: JobSource[];
   private readonly getCustomSources: () => JobSource[];
   private readonly corsProxies: string[];
   private cache = new FastCache();
   private workerPool = new WorkerPool();
+  private rateLimiter = createRateLimiter(getConfig().scraping.rateLimitDelayMs ?? 2000);
   private abortController: AbortController | null = null;
 
   constructor(
@@ -107,6 +135,10 @@ export class JobScraperAdapter implements IJobScraperGateway {
     this.builtInSources = builtInSources;
     this.getCustomSources = getCustomSources;
     this.corsProxies = corsProxies;
+  }
+
+  private async ensureRateLimit(): Promise<void> {
+    await this.rateLimiter.wait();
   }
 
   abort(): void {
@@ -184,6 +216,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
     if (cached) return cached;
 
     try {
+      await this.ensureRateLimit();
       let xmlText = '';
       for (const proxy of this.corsProxies) {
         try {
@@ -276,6 +309,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
     if (cached) return cached;
 
     try {
+      await this.ensureRateLimit();
       let jsonData: unknown = null;
       for (const proxy of this.corsProxies) {
         try {
@@ -387,6 +421,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
     if (cached) return cached;
 
     try {
+      await this.ensureRateLimit();
       let htmlText = '';
       for (const proxy of this.corsProxies) {
         try {
@@ -478,6 +513,93 @@ export class JobScraperAdapter implements IJobScraperGateway {
     }
   }
 
+  private async parseATSPage(source: JobSource, keywords: string[] = []): Promise<Job[]> {
+    const cacheKey = `ats-${source.id}-${keywords.join(',')}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
+    const atsKey = source.ats;
+    if (!atsKey) return [];
+    const config = ATS_CONFIG[atsKey];
+    if (!config) return [];
+
+    try {
+      await this.ensureRateLimit();
+      let htmlText = '';
+      for (const proxy of this.corsProxies) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), getConfig().scraping.requestTimeoutMs);
+          const response = await fetch(`${proxy}${encodeURIComponent(source.url)}`, {
+            signal: controller.signal,
+            headers: DEFAULT_REQUEST_HEADERS,
+          });
+          clearTimeout(timeout);
+          if (response.ok) {
+            htmlText = await response.text();
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      if (!htmlText) throw new Error('Failed to fetch ATS page');
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const jobs: Job[] = [];
+      const { selectors } = config;
+      const companyName = source.companyName || source.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+      const containers = doc.querySelectorAll(selectors.jobContainer);
+      containers.forEach((container, index) => {
+        const titleEl = container.querySelector(selectors.title);
+        const title = titleEl?.textContent?.trim() || '';
+        if (!title || title.length < 2) return;
+
+        const locationEl = container.querySelector(selectors.location);
+        const location = locationEl?.textContent?.trim() || 'Remote';
+
+        const linkEl = container.querySelector(selectors.link);
+        let url = linkEl?.getAttribute('href') || '';
+        if (url && !url.startsWith('http')) {
+          const baseUrl = new URL(source.url);
+          url = url.startsWith('/') ? `${baseUrl.origin}${url}` : `${baseUrl.origin}/${url}`;
+        }
+
+        const departmentEl = container.querySelector(selectors.department);
+        const department = departmentEl?.textContent?.trim() || '';
+
+        if (keywords.length > 0) {
+          const searchText = `${title} ${location} ${department}`.toLowerCase();
+          const hasMatch = keywords.some((kw) => searchText.includes(kw.toLowerCase()));
+          if (!hasMatch) return;
+        }
+
+        jobs.push({
+          id: `${source.id}-${index}-${Date.now()}`,
+          title,
+          company: companyName,
+          location,
+          jobType: 'Full-time',
+          description: department ? `Department: ${department}` : '',
+          url: url || source.url,
+          postedAt: new Date().toISOString(),
+          tags: [config.name, source.category],
+          source: source.name,
+          category: source.category,
+        });
+      });
+
+      this.cache.set(cacheKey, jobs);
+      return jobs;
+    } catch (error) {
+      console.warn(`ATS parse error for ${source.name}:`, error);
+      return [];
+    }
+  }
+
   private async fetchRemoteOk(keywords: string[] = []): Promise<Job[]> {
     const cacheKey = `api-remoteok-${keywords.join(',')}`;
     const cached = this.cache.get(cacheKey);
@@ -561,6 +683,111 @@ export class JobScraperAdapter implements IJobScraperGateway {
     }
   }
 
+  /**
+   * Parse "X hours ago", "X days ago" into an approximate Date (past).
+   */
+  private static parseHnAge(text: string): Date {
+    const now = Date.now();
+    const m = text.trim().match(/^(\d+)\s*(minute|hour|day|week)s?\s+ago$/i);
+    if (!m) return new Date(now);
+    const n = parseInt(m[1], 10);
+    const unit = m[2].toLowerCase();
+    let ms = 0;
+    if (unit.startsWith('minute')) ms = n * 60 * 1000;
+    else if (unit.startsWith('hour')) ms = n * 60 * 60 * 1000;
+    else if (unit.startsWith('day')) ms = n * 24 * 60 * 60 * 1000;
+    else if (unit.startsWith('week')) ms = n * 7 * 24 * 60 * 60 * 1000;
+    return new Date(now - ms);
+  }
+
+  private async fetchHackerNewsJobs(keywords: string[] = []): Promise<Job[]> {
+    const cacheKey = `hn-jobs-${keywords.join(',')}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
+    try {
+      await this.ensureRateLimit();
+      let htmlText = '';
+      for (const proxy of this.corsProxies) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), getConfig().scraping.requestTimeoutMs);
+          const response = await fetch(`${proxy}${encodeURIComponent('https://news.ycombinator.com/jobs')}`, {
+            signal: controller.signal,
+          });
+          clearTimeout(timeout);
+          if (response.ok) {
+            htmlText = await response.text();
+            break;
+          }
+        } catch {
+          continue;
+        }
+      }
+
+      if (!htmlText) throw new Error('Failed to fetch HN jobs');
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const jobs: Job[] = [];
+      const rows = doc.querySelectorAll('tr.athing');
+
+      rows.forEach((row, index) => {
+        const titleEl = row.querySelector('td.title span.titleline a, td.title a');
+        if (!titleEl) return;
+        const title = titleEl.textContent?.trim() || '';
+        let url = titleEl.getAttribute('href') || '';
+        if (!title || title.length < 2) return;
+        if (url && !url.startsWith('http')) {
+          url = url.startsWith('/') ? `https://news.ycombinator.com${url}` : `https://news.ycombinator.com/${url}`;
+        }
+
+        let postedAt = new Date().toISOString();
+        let next: Element | null = row.nextElementSibling;
+        while (next) {
+          const subtext = next.querySelector('td.subtext');
+          if (subtext) {
+            const ago = subtext.textContent?.trim() || '';
+            if (ago.includes('ago')) {
+              postedAt = JobScraperAdapter.parseHnAge(ago).toISOString();
+            }
+            break;
+          }
+          next = next.nextElementSibling;
+        }
+
+        const companyMatch = title.match(/^([^–—-]+?)\s*\(YC\s+/i) || title.match(/^([^–—-]+?)\s+[Ii]s\s+Hiring/i);
+        const company = companyMatch ? companyMatch[1].trim() : 'YC Startup';
+
+        if (keywords.length > 0) {
+          const searchText = `${title} ${company}`.toLowerCase();
+          const hasMatch = keywords.some((kw) => searchText.includes(kw.toLowerCase()));
+          if (!hasMatch) return;
+        }
+
+        jobs.push({
+          id: `hn-jobs-${index}-${Date.now()}`,
+          title,
+          company,
+          location: 'Remote',
+          jobType: 'Full-time',
+          description: '',
+          url: url || 'https://news.ycombinator.com/jobs',
+          postedAt,
+          tags: ['Community', 'YC'],
+          source: 'Hacker News Jobs (YC)',
+          category: 'Community',
+        });
+      });
+
+      this.cache.set(cacheKey, jobs);
+      return jobs;
+    } catch (error) {
+      console.warn('Hacker News Jobs fetch error:', error);
+      return [];
+    }
+  }
+
   private async fetchArbeitnow(keywords: string[] = []): Promise<Job[]> {
     const cacheKey = `api-arbeitnow-${keywords.join(',')}`;
     const cached = this.cache.get(cacheKey);
@@ -635,8 +862,13 @@ export class JobScraperAdapter implements IJobScraperGateway {
       case 'arbeitnow':
         jobs = await this.fetchArbeitnow(keywords);
         break;
+      case 'hn-jobs':
+        jobs = await this.fetchHackerNewsJobs(keywords);
+        break;
       default:
-        if (source.type === 'rss') {
+        if (source.type === 'ats') {
+          jobs = await this.parseATSPage(source, keywords);
+        } else if (source.type === 'rss') {
           jobs = await this.parseRSSFeed(source, keywords);
         } else if (source.type === 'json') {
           jobs = await this.parseJSONApi(source, keywords);
