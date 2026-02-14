@@ -12,6 +12,7 @@ import {
   manageCustomSourcesUseCase,
   computeStatsUseCase,
 } from '@/core/container';
+import { JobCacheService } from '@/core/services/JobCacheService';
 
 const DEFAULT_FILTER: JobFilter = {
   keywords: [],
@@ -22,15 +23,20 @@ const DEFAULT_FILTER: JobFilter = {
   sources: [],
 };
 
+// Load from cache on init so first paint shows cached jobs
+function getInitialJobs(): Job[] {
+  return JobCacheService.getCachedJobs();
+}
+
 export function useJobsPageViewModel() {
   const config = getConfig();
   const jobsPerBatch = config.scraping.jobsPerBatch;
   const defaultKeywords = config.keywords.default;
 
-  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobs, setJobs] = useState<Job[]>(getInitialJobs);
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasScraped, setHasScraped] = useState(false);
+  const [hasScraped, setHasScraped] = useState(() => getInitialJobs().length > 0);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeKeywords, setActiveKeywords] = useState<string[]>([defaultKeywords[0]]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
@@ -52,15 +58,54 @@ export function useJobsPageViewModel() {
   });
   const [filter, setFilter] = useState<JobFilter>(DEFAULT_FILTER);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [backgroundRefreshing, setBackgroundRefreshing] = useState(false);
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // Auto-load jobs on mount
+  // On load: show cached jobs immediately; run scrape in parallel (background)
   useEffect(() => {
-    if (!hasScraped && jobs.length === 0) {
-      handleScrape();
-    }
-  }, []);
+    const runBackgroundScrape = async () => {
+      const cachedCount = JobCacheService.getCachedJobs().length;
+      const isFirstLoadNoCache = cachedCount === 0;
+
+      if (isFirstLoadNoCache) {
+        setLoading(true);
+      } else {
+        setBackgroundRefreshing(true);
+      }
+      setScrapeProgress((prev) => ({ ...prev, isComplete: false }));
+
+      const { sources: allSourceList } = getSourcesUseCase.execute();
+      const sourcesToUse =
+        allSourceList.filter((s) => s.enabled).map((s) => s.id);
+
+      try {
+        const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
+          {
+            keywords: [defaultKeywords[0]],
+            selectedSources: sourcesToUse,
+            maxJobsPerSource: 100,
+          },
+          (progress) => setScrapeProgress(progress)
+        );
+
+        if (scrapedJobs.length > 0) {
+          setJobs(scrapedJobs);
+          JobCacheService.saveJobs(scrapedJobs);
+          setLastUpdated(new Date());
+          setHasScraped(true);
+        }
+      } catch {
+        // Keep existing jobs (cache)
+      } finally {
+        setLoading(false);
+        setBackgroundRefreshing(false);
+        setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
+      }
+    };
+
+    runBackgroundScrape();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount 
 
   const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
@@ -102,8 +147,9 @@ export function useJobsPageViewModel() {
     setCustomSources(manageCustomSourcesUseCase.getCustomSources());
   }, [showCustomSource]);
 
+  // Manual search (e.g. user clicked Search): full loading, then show results or keep cache
   const handleScrape = useCallback(async (): Promise<number> => {
-    if (loading) return 0; // Prevent multiple calls
+    if (loading) return 0;
     setLoading(true);
     setHasScraped(true);
     setScrapeProgress({
@@ -130,19 +176,20 @@ export function useJobsPageViewModel() {
         (progress) => setScrapeProgress(progress)
       );
 
-      setJobs(scrapedJobs);
-      setDisplayedJobs(scrapedJobs.slice(0, jobsPerBatch));
-      setHasMore(scrapedJobs.length > jobsPerBatch);
-      setLastUpdated(new Date());
+      if (scrapedJobs.length > 0) {
+        setJobs(scrapedJobs);
+        JobCacheService.saveJobs(scrapedJobs);
+        setLastUpdated(new Date());
+      }
+      // If scrape returned empty or failed, jobs stay as-is (cached)
       setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       return scrapedJobs.length;
     } catch {
-      // throw new Error('Scrape failed'); // Silent fail for auto-load
       return 0;
     } finally {
       setLoading(false);
     }
-  }, [activeKeywords, selectedSources, jobsPerBatch]);
+  }, [activeKeywords, selectedSources, loading]);
 
   const handleKeywordSelect = useCallback((keyword: string) => {
     setActiveKeywords([keyword]);
@@ -202,5 +249,6 @@ export function useJobsPageViewModel() {
     loadMore,
     selectedJob,
     setSelectedJob,
+    backgroundRefreshing,
   };
 }

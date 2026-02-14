@@ -6,6 +6,7 @@ import { SignUpPage } from '@/presentation/pages/SignUpPage';
 import { LoginPage } from '@/presentation/pages/LoginPage';
 import { AboutPage } from '@/presentation/pages/AboutPage';
 import { BlogPage } from '@/presentation/pages/BlogPage';
+import { BlogDetailsPage } from '@/presentation/pages/BlogDetailsPage';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:id" element={<BlogDetailsPage />} />
       </Routes>
       <Toaster position="top-right" richColors />
     </>

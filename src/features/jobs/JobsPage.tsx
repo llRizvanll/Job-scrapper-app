@@ -58,7 +58,8 @@ export function JobsPage() {
 
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12">
             
-            {vm.loading && (
+            {/* Full loading overlay only when no cached jobs */}
+            {vm.loading && vm.jobs.length === 0 && (
               <div className="max-w-xl mx-auto mb-12 bg-white rounded-2xl p-6 shadow-lg border border-blue-100">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -86,6 +87,14 @@ export function JobsPage() {
               </div>
             )}
 
+            {/* Subtle "updating" when refreshing in background with cache */}
+            {vm.backgroundRefreshing && vm.jobs.length > 0 && (
+              <div className="max-w-xl mx-auto mb-6 flex items-center gap-3 rounded-full bg-blue-50 border border-blue-100 px-4 py-2.5 text-sm text-blue-700">
+                <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                <span>Updating jobs… {vm.scrapeProgress.current} / {vm.scrapeProgress.total} sources</span>
+              </div>
+            )}
+
             <div className="flex flex-col lg:flex-row gap-8">
                {/* Sidebar / Stats / Additional Filters could go here */}
                
@@ -93,7 +102,7 @@ export function JobsPage() {
                <div className="w-full">
                  <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">
-                       {vm.loading ? 'Searching for jobs...' : 
+                       {vm.loading && vm.jobs.length === 0 ? 'Searching for jobs...' :
                         vm.hasScraped ? `${vm.filteredJobs.length} Remote Jobs Found` : 'Latest Remote Jobs'
                        }
                     </h2>
