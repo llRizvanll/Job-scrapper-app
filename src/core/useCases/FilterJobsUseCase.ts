@@ -15,6 +15,7 @@ export class FilterJobsUseCase {
     const { jobs, filter, searchQuery } = input;
 
     const filteredJobs = jobs.filter((job) => {
+      // 1. Search Query (Title, Company, Tags)
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         const matches =
@@ -24,34 +25,48 @@ export class FilterJobsUseCase {
         if (!matches) return false;
       }
 
-      if (filter.location) {
-        if (!job.location.toLowerCase().includes(filter.location.toLowerCase())) return false;
+      // 2. Job Type (Multi-select OR)
+      if (filter.jobTypes && filter.jobTypes.length > 0) {
+        // Map job.jobType to expected types if necessary, or just loose match
+        const jobType = job.jobType?.toLowerCase() || '';
+        const hasMatch = filter.jobTypes.some(t => jobType.includes(t.toLowerCase()));
+        if (!hasMatch) return false;
       }
 
-      if (filter.jobType) {
-        if (job.jobType.toLowerCase() !== filter.jobType.toLowerCase()) return false;
+      // 3. Workplace Type (Remote, Hybrid, On-site)
+      if (filter.workplaceTypes && filter.workplaceTypes.length > 0) {
+        const isRemote = job.location.toLowerCase().includes('remote') || job.tags.some(t => t.toLowerCase().includes('remote'));
+        const isHybrid = job.location.toLowerCase().includes('hybrid') || job.tags.some(t => t.toLowerCase() === 'hybrid');
+        const isOnSite = !isRemote && !isHybrid; // Simplification
+
+        let matchesWorkplace = false;
+        if (filter.workplaceTypes.includes('Remote') && isRemote) matchesWorkplace = true;
+        if (filter.workplaceTypes.includes('Hybrid') && isHybrid) matchesWorkplace = true;
+        if (filter.workplaceTypes.includes('On-site') && isOnSite) matchesWorkplace = true;
+        
+        if (!matchesWorkplace) return false;
       }
 
-      if (filter.salaryRange && job.salary) {
-        const salary = job.salary.toLowerCase();
-        let matches = false;
-        switch (filter.salaryRange) {
-          case '0-50k':
-            matches = /\b[3-5]0?k?\b/i.test(salary);
-            break;
-          case '50k-100k':
-            matches = /\b[6-9]0?k?\b|100k?\b/i.test(salary);
-            break;
-          case '100k-150k':
-            matches = /\b1[0-4]0?k?\b|150k?\b/i.test(salary);
-            break;
-          case '150k+':
-            matches = /\b1[5-9]0?k?\b|[2-9]00?k?\b/i.test(salary);
-            break;
+      // 4. Locations (Country/Timezone)
+      if (filter.locations && filter.locations.length > 0) {
+        const jobLoc = job.location.toLowerCase();
+        const hasMatch = filter.locations.some(loc => jobLoc.includes(loc.toLowerCase()));
+        if (!hasMatch) return false;
+      }
+
+      // 5. Salary
+      if (filter.minSalary && job.salary) {
+        // Basic extraction of numbers from string
+        const matches = job.salary.match(/(\d+)[kK]?/g);
+        if (matches) {
+           // This is a naive parser, improved real-world logic would be needed
+           const nums = matches.map(m => parseInt(m.replace(/[kK]/i, '000')));
+           const maxSalary = Math.max(...nums);
+           if (maxSalary < filter.minSalary) return false;
         }
-        if (!matches) return false;
       }
 
+      // 6. Posted Within
       if (filter.postedWithin) {
         const now = new Date().getTime();
         const jobDate = new Date(job.postedAt).getTime();
@@ -69,6 +84,7 @@ export class FilterJobsUseCase {
         }
       }
 
+      // 7. Sources
       if (filter.sources.length > 0) {
         if (
           !filter.sources.some((s) => job.source.toLowerCase().includes(s.toLowerCase()))

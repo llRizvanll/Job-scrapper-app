@@ -50,6 +50,8 @@ export function JobsPage() {
             setSearchQuery={vm.setSearchQuery}
             onSearch={vm.handleScrape}
             loading={vm.loading}
+            filter={vm.filter}
+            setFilter={vm.setFilter}
           />
 
           <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-12">

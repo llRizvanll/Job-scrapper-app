@@ -15,9 +15,9 @@ import {
 
 const DEFAULT_FILTER: JobFilter = {
   keywords: [],
-  location: '',
-  jobType: '',
-  salaryRange: '',
+  jobTypes: [],
+  workplaceTypes: [],
+  locations: [],
   postedWithin: '',
   sources: [],
 };
@@ -54,6 +54,13 @@ export function useJobsPageViewModel() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const loaderRef = useRef<HTMLDivElement>(null);
+
+  // Auto-load jobs on mount
+  useEffect(() => {
+    if (!hasScraped && jobs.length === 0) {
+      handleScrape();
+    }
+  }, []);
 
   const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
@@ -95,6 +102,7 @@ export function useJobsPageViewModel() {
   }, [showCustomSource]);
 
   const handleScrape = useCallback(async (): Promise<number> => {
+    if (loading) return 0; // Prevent multiple calls
     setLoading(true);
     setHasScraped(true);
     setScrapeProgress({
@@ -128,7 +136,8 @@ export function useJobsPageViewModel() {
       setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       return scrapedJobs.length;
     } catch {
-      throw new Error('Scrape failed');
+      // throw new Error('Scrape failed'); // Silent fail for auto-load
+      return 0;
     } finally {
       setLoading(false);
     }
