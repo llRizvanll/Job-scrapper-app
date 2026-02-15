@@ -6,6 +6,7 @@ import type { Job, JobSource, ScrapeConfig } from '../entities';
 import type { IJobScraperGateway, ScrapeProgressCallback } from '../ports';
 import { getConfig } from '@/config';
 import { ATS_CONFIG } from '@/data/atsConfig';
+import { TagExtractor } from '../services/TagExtractor';
 
 // Fast in-memory cache with LRU eviction
 class FastCache {
@@ -366,7 +367,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
               description: '',
               url: JobScraperAdapter.ensureAbsoluteUrl(link, source.url),
               postedAt: JobScraperAdapter.normalizePostedAt(item.updated_at),
-              tags: ['Greenhouse', source.category],
+              tags: [...new Set(['Greenhouse', source.category, ...TagExtractor.extract(title, '')])],
               source: source.name,
               category: source.category,
             } satisfies Job;
@@ -415,7 +416,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
               description: department ? `Department: ${department}` : '',
               url: JobScraperAdapter.ensureAbsoluteUrl((obj.applyUrl as string) || source.url, source.url),
               postedAt: JobScraperAdapter.normalizePostedAt(obj.createdAt),
-              tags: ['Lever', source.category],
+              tags: [...new Set(['Lever', source.category, ...TagExtractor.extract(title, department)])],
               source: source.name,
               category: source.category,
             } satisfies Job;
@@ -472,7 +473,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
             source.url
           ),
           postedAt: JobScraperAdapter.normalizePostedAt(item.publishedAt),
-          tags: ['Ashby', source.category],
+          tags: [...new Set(['Ashby', source.category, ...TagExtractor.extract(title, department)])],
           source: source.name,
           category: source.category,
         } satisfies Job;
@@ -515,7 +516,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
             source.url
           ),
           postedAt: JobScraperAdapter.normalizePostedAt(item.published_on),
-          tags: ['Workable', source.category],
+          tags: [...new Set(['Workable', source.category, ...TagExtractor.extract(title, department)])],
           source: source.name,
           category: source.category,
         } satisfies Job;
@@ -555,7 +556,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           description: department ? `Department: ${department}` : '',
           url: JobScraperAdapter.ensureAbsoluteUrl((item.ref as string) || source.url, source.url),
           postedAt: JobScraperAdapter.normalizePostedAt(item.releasedDate),
-          tags: ['SmartRecruiters', source.category],
+          tags: [...new Set(['SmartRecruiters', source.category, ...TagExtractor.extract(title, department)])],
           source: source.name,
           category: source.category,
         } satisfies Job;
@@ -590,7 +591,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           description: department ? `Department: ${department}` : '',
           url: JobScraperAdapter.ensureAbsoluteUrl((obj.url as string) || source.url, source.url),
           postedAt: JobScraperAdapter.normalizePostedAt(obj.created_date),
-          tags: ['Breezy', source.category],
+          tags: [...new Set(['Breezy', source.category, ...TagExtractor.extract(title, department)])],
           source: source.name,
           category: source.category,
         } satisfies Job;
@@ -624,7 +625,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           description: department ? `Department: ${department}` : '',
           url: JobScraperAdapter.ensureAbsoluteUrl((item.url as string) || source.url, source.url),
           postedAt: JobScraperAdapter.normalizePostedAt(item.published_at),
-          tags: ['Teamtailor', source.category],
+          tags: [...new Set(['Teamtailor', source.category, ...TagExtractor.extract(title, department)])],
           source: source.name,
           category: source.category,
         } satisfies Job;
@@ -711,7 +712,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           description: description.replace(/<[^>]*>/g, '').slice(0, 400),
           url: link,
           postedAt: new Date(pubDate).toISOString(),
-          tags: [source.category],
+          tags: [...new Set([source.category, ...TagExtractor.extract(cleanTitle, description)])],
           source: source.name,
           category: source.category,
         });
@@ -823,7 +824,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           description: String(description).slice(0, 400),
           url,
           postedAt: new Date(postedAt).toISOString(),
-          tags: [source.category],
+          tags: [...new Set([source.category, ...TagExtractor.extract(title, String(description))])],
           source: source.name,
           category: source.category,
         });

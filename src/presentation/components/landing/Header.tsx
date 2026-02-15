@@ -23,62 +23,58 @@ export function Header() {
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
+          <div className="flex-shrink-0 flex items-center gap-2">
             <div className="w-8 h-8 bg-[#5D3FD3] rounded-full flex items-center justify-center text-white font-bold text-lg">
-              R
+              A
             </div>
-            <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
-              loadmore<span className="text-gray-400 font-normal">.in</span>
+            <Link to="/" className="flex flex-col items-start -space-y-1">
+              <span className="text-xl font-bold text-gray-900 tracking-tight">
+                A Dune
+              </span>
+              <span className="text-[10px] text-gray-500 font-medium tracking-wide">
+                One dune. Every source.
+              </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <Link to="/job-seekers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+          {/* Desktop Navigation - Hidden on smaller screens, visible on xl */}
+          <nav className="hidden xl:flex items-center gap-6">
+            <Link to="/job-seekers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               For job seekers
             </Link>
-            <Link to="/employers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link to="/freelancer-hub" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
+              Freelance Hub
+            </Link>
+            <Link to="/employers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               For employers
             </Link>
-            <Link to="/freelancer-hub" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
-              Freelancer Hub
+            <Link to="/saved-jobs" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
+              Saved Jobs
             </Link>
-            <Link to="/contracts" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+            <Link to="/contracts" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               Contracts
             </Link>
           </nav>
 
-          {/* Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <Link to="/saved-jobs">
-              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
-                Saved Jobs
-              </Button>
-            </Link>
-            <div className="h-4 w-px bg-gray-200"></div>
-            <Link to="/employers">
-              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
-                Post a job
-              </Button>
-            </Link>
-            <div className="h-4 w-px bg-gray-200"></div>
+          {/* Actions - Hidden on smaller screens, visible on xl */}
+          <div className="hidden xl:flex items-center gap-3">
             <Link to="/sign-up">
-              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 whitespace-nowrap">
                 Sign up
               </Button>
             </Link>
             <Link to="/login">
-              <Button className="bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full px-5 text-[15px] font-medium transition-colors shadow-sm shadow-blue-500/20">
+              <Button className="bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full px-5 text-[15px] font-medium transition-colors shadow-sm shadow-blue-500/20 whitespace-nowrap">
                 Log in
               </Button>
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Visible on lg and below */}
           <button 
-            className="md:hidden text-gray-600"
+            className="xl:hidden text-gray-600 p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
@@ -88,35 +84,39 @@ export function Header() {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 p-4 shadow-lg animate-in slide-in-from-top-5">
-          <nav className="flex flex-col gap-4">
-            <Link to="/job-seekers" className="text-lg font-medium text-gray-900 py-2">
+        <div className="xl:hidden absolute top-full left-0 right-0 bg-white border-b border-gray-100 p-4 shadow-lg animate-in slide-in-from-top-5 h-[calc(100vh-80px)] overflow-y-auto">
+          <nav className="flex flex-col gap-2">
+            <Link to="/job-seekers" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               For job seekers
             </Link>
-            <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
+            <Link to="/employers" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               For employers
             </Link>
-            <Link to="/freelancer-hub" className="text-lg font-medium text-gray-900 py-2">
+            <Link to="/freelancer-hub" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               Freelancer Hub
             </Link>
-            <Link to="/contracts" className="text-lg font-medium text-gray-900 py-2">
+            <Link to="/contracts" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               Contracts
             </Link>
-            <Link to="/employers" className="text-lg font-medium text-gray-900 py-2">
-              Pricing
+             <Link to="/saved-jobs" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
+              Saved Jobs
             </Link>
-            <hr className="border-gray-100" />
-            <Link to="/employers" className="text-lg font-medium text-gray-600 py-2">
+            
+            <hr className="border-gray-100 my-2" />
+            
+            <Link to="/employers" className="text-lg font-medium text-gray-600 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               Post a job
             </Link>
-            <Link to="/sign-up" className="text-lg font-medium text-gray-600 py-2">
+            <Link to="/sign-up" className="text-lg font-medium text-gray-600 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               Sign up
             </Link>
-            <Link to="/login">
-              <Button className="w-full bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full">
-                Log in
-              </Button>
-            </Link>
+            <div className="pt-2">
+              <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button className="w-full bg-[#0055FF] hover:bg-[#0044CC] text-white rounded-full h-12 text-lg">
+                  Log in
+                </Button>
+              </Link>
+            </div>
           </nav>
         </div>
       )}

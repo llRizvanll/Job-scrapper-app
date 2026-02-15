@@ -116,6 +116,22 @@ export function JobDetails({ job, onBack, isSaved, onToggleSave }: JobDetailsPro
                 dangerouslySetInnerHTML={{ __html: job.description }}
               />
             </section>
+
+            {/* Skills & Tags Section */}
+            <section className="pt-8 border-t border-slate-100">
+               <h2 className="text-xl font-bold text-slate-900 mb-4">Skills & Tags</h2>
+               <div className="flex flex-wrap gap-2">
+                  {job.tags.length > 0 ? (
+                    job.tags.map(tag => (
+                      <span key={tag} className="inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-sm font-medium text-slate-700">
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-slate-500 italic">No specific tags identified for this job.</span>
+                  )}
+               </div>
+            </section>
           </div>
 
           {/* Sidebar */}

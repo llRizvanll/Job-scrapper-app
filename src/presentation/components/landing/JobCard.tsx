@@ -114,7 +114,7 @@ export function JobCard({ job, onSelect, isSaved, onToggleSave }: JobCardProps) 
                     {job.jobType}
                 </div>
              )}
-             {job.tags.slice(0, 2).map(tag => (
+             {job.tags.slice(0, 4).map(tag => (
                 <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50/50 border border-blue-100 text-xs font-medium text-blue-600/80">
                    {tag}
                 </span>

@@ -9,7 +9,7 @@ export function Footer() {
           {/* Brand Column */}
           <div className="space-y-6">
             <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
-                loadmore<span className="text-gray-400 font-normal">.in</span>
+                adune<span className="text-gray-400 font-normal">.app</span>
             </Link>
             <div className="flex items-center gap-4">
                {/* Social icons remain unchanged */}
@@ -29,7 +29,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Rebranding</h3>
             <ul className="space-y-3">
-              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">About LoadMore</Link></li>
+              <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">About Adune</Link></li>
               <li><Link to="/job-seekers" className="text-[15px] text-gray-500 hover:text-gray-900">Careers</Link></li>
               <li><Link to="/blog" className="text-[15px] text-gray-500 hover:text-gray-900">Blog</Link></li>
               <li><Link to="/about" className="text-[15px] text-gray-500 hover:text-gray-900">Press</Link></li>
@@ -40,7 +40,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-4">Job Seekers</h3>
             <ul className="space-y-3">
-              <li><Link to="/sign-up" className="text-[15px] text-gray-500 hover:text-gray-900">Sign up with LoadMore</Link></li>
+              <li><Link to="/sign-up" className="text-[15px] text-gray-500 hover:text-gray-900">Sign up with Adune</Link></li>
               <li><Link to="/" className="text-[15px] text-gray-500 hover:text-gray-900">Browse remote jobs</Link></li>
               <li><Link to="/job-seekers" className="text-[15px] text-gray-500 hover:text-gray-900">Job seeker help docs</Link></li>
             </ul>
@@ -59,7 +59,7 @@ export function Footer() {
 
         <div className="mt-16 pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="text-sm text-gray-500">
-            Copyright © {new Date().getFullYear()} LoadMore, Inc. All rights reserved.
+            Copyright © {new Date().getFullYear()} Adune, Inc. All rights reserved.
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
              <a href="#" className="hover:text-gray-900">Terms</a>
