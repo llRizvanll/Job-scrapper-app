@@ -9,6 +9,7 @@ import { BlogPage } from '@/presentation/pages/BlogPage';
 import { BlogDetailsPage } from '@/presentation/pages/BlogDetailsPage';
 import { ContractorManagementPage } from '@/presentation/pages/ContractorManagementPage';
 import { FreelancerHubPage } from '@/presentation/pages/FreelancerHubPage';
+import { SavedJobsPage } from '@/presentation/pages/SavedJobsPage';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/employers" element={<EmployersPage />} />
         <Route path="/freelancer-hub" element={<FreelancerHubPage />} />
         <Route path="/contracts" element={<ContractorManagementPage />} />
+        <Route path="/saved-jobs" element={<SavedJobsPage />} />
         <Route path="/sign-up" element={<SignUpPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/about" element={<AboutPage />} />

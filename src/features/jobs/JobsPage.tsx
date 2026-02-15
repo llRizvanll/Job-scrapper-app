@@ -26,7 +26,9 @@ export function JobsPage() {
         <div className="pt-20">
           <JobDetails 
             job={vm.selectedJob} 
-            onBack={() => vm.setSelectedJob(null)} 
+            onBack={() => vm.setSelectedJob(null)}
+            isSaved={vm.savedJobs.some(j => j.id === vm.selectedJob?.id)}
+            onToggleSave={() => vm.selectedJob && vm.toggleSaveJob(vm.selectedJob)}
           />
         </div>
         <Footer />
@@ -129,6 +131,8 @@ export function JobsPage() {
                    hasMore={vm.hasMore}
                    onLoadMore={vm.loadMore}
                    onJobSelect={vm.setSelectedJob}
+                   savedJobs={vm.savedJobs}
+                   onToggleSave={vm.toggleSaveJob}
                  />
                </div>
             </div>

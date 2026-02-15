@@ -52,6 +52,12 @@ export function Header() {
 
           {/* Actions */}
           <div className="hidden md:flex items-center gap-4">
+            <Link to="/saved-jobs">
+              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
+                Saved Jobs
+              </Button>
+            </Link>
+            <div className="h-4 w-px bg-gray-200"></div>
             <Link to="/employers">
               <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50">
                 Post a job

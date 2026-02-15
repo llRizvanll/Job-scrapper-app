@@ -9,9 +9,11 @@ import { getJobAvatarStyle, getJobTitleInitial } from './jobAvatar';
 interface JobCardProps {
   job: Job;
   onSelect?: () => void;
+  isSaved?: boolean;
+  onToggleSave?: (e: React.MouseEvent) => void;
 }
 
-export function JobCard({ job, onSelect }: JobCardProps) {
+export function JobCard({ job, onSelect, isSaved, onToggleSave }: JobCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const avatarStyle = useMemo(() => getJobAvatarStyle(job.title), [job.title]);
   const titleInitial = useMemo(() => getJobTitleInitial(job.title, job.company), [job.title, job.company]);
@@ -83,8 +85,16 @@ export function JobCard({ job, onSelect }: JobCardProps) {
                </div>
             </div>
             <div className="flex flex-col items-end gap-2">
-               <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-yellow-400 -mt-2 -mr-2">
-                  <Star className="w-4 h-4" />
+               <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={`h-8 w-8 -mt-2 -mr-2 transition-colors ${isSaved ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-300 hover:text-yellow-400'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleSave?.(e);
+                  }}
+               >
+                  <Star className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
                </Button>
                {isHovered && (
                   <ChevronRight className="text-blue-400 w-5 h-5 flex-shrink-0 animate-in fade-in slide-in-from-left-1" />

@@ -18,9 +18,11 @@ import { getJobAvatarStyle, getJobTitleInitial } from './jobAvatar';
 interface JobDetailsProps {
   job: Job;
   onBack: () => void;
+  isSaved?: boolean;
+  onToggleSave?: () => void;
 }
 
-export function JobDetails({ job, onBack }: JobDetailsProps) {
+export function JobDetails({ job, onBack, isSaved, onToggleSave }: JobDetailsProps) {
   // Mock data for things not in Job entity but in screenshot
   const applicationsEnds = 'Jul 1, 2026';
   const daysLeft = '136 DAYS LEFT';
@@ -70,8 +72,13 @@ export function JobDetails({ job, onBack }: JobDetailsProps) {
                 <Button variant="outline" size="icon" className="rounded-full border-slate-200">
                    <Share2 className="w-5 h-5 text-slate-600" />
                 </Button>
-                <Button variant="outline" size="icon" className="rounded-full border-slate-200">
-                   <Bookmark className="w-5 h-5 text-slate-600" />
+                <Button 
+                   variant="outline" 
+                   size="icon" 
+                   className={`rounded-full border-slate-200 ${isSaved ? 'bg-blue-50 border-blue-200 text-blue-600' : ''}`}
+                   onClick={onToggleSave}
+                >
+                   <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : 'text-slate-600'}`} />
                 </Button>
              </div>
           </div>

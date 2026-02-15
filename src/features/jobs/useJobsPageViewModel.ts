@@ -13,6 +13,7 @@ import {
   computeStatsUseCase,
 } from '@/core/container';
 import { JobCacheService } from '@/core/services/JobCacheService';
+import { SavedJobService } from '@/core/services/SavedJobService';
 
 const DEFAULT_FILTER: JobFilter = {
   keywords: [],
@@ -62,6 +63,7 @@ export function useJobsPageViewModel() {
   const [showFilters, setShowFilters] = useState(() => initialJobs.length > 0);
   const [showSources, setShowSources] = useState(false);
   const [showCustomSource, setShowCustomSource] = useState(false);
+  const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(JobCacheService.getLastUpdated());
   const [customSources, setCustomSources] = useState<JobSource[]>(() =>
     manageCustomSourcesUseCase.getCustomSources()
@@ -235,6 +237,21 @@ export function useJobsPageViewModel() {
     setCustomSources(manageCustomSourcesUseCase.getCustomSources());
   }, [showCustomSource]);
 
+  useEffect(() => {
+    setSavedJobs(SavedJobService.getSavedJobs());
+  }, []);
+
+  const toggleSaveJob = useCallback((job: Job) => {
+    setSavedJobs(prev => {
+      const isSaved = prev.some(j => j.id === job.id);
+      if (isSaved) {
+        return SavedJobService.removeJob(job.id);
+      } else {
+        return SavedJobService.saveJob(job);
+      }
+    });
+  }, []);
+
   // Manual search (e.g. user clicked Search): full loading, then show results or keep cache
   const handleScrape = useCallback(async (): Promise<number> => {
     if (loading) return 0;
@@ -349,5 +366,7 @@ export function useJobsPageViewModel() {
     selectedJob,
     setSelectedJob,
     backgroundRefreshing,
+    savedJobs,
+    toggleSaveJob,
   };
 }

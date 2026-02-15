@@ -9,9 +9,11 @@ interface JobListProps {
   hasMore: boolean;
   onLoadMore?: () => void;
   onJobSelect?: (job: Job) => void;
+  savedJobs?: Job[];
+  onToggleSave?: (job: Job) => void;
 }
 
-export function JobList({ jobs, loading, hasMore, onLoadMore, onJobSelect }: JobListProps) {
+export function JobList({ jobs, loading, hasMore, onLoadMore, onJobSelect, savedJobs = [], onToggleSave }: JobListProps) {
   if (loading && jobs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
@@ -42,7 +44,9 @@ export function JobList({ jobs, loading, hasMore, onLoadMore, onJobSelect }: Job
           <JobCard 
             key={job.id} 
             job={job} 
-            onSelect={onJobSelect ? () => onJobSelect(job) : undefined} 
+            onSelect={onJobSelect ? () => onJobSelect(job) : undefined}
+            isSaved={savedJobs.some(j => j.id === job.id)}
+            onToggleSave={() => onToggleSave?.(job)}
           />
         ))}
       </div>
