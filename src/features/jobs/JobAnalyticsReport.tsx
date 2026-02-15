@@ -78,7 +78,9 @@ function StatCard({ title, value, subtext, icon: Icon, trend }: any) {
 }
 
 export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportProps) {
-  const { stats, topCompanies, postedLast7d } = report;
+  const { stats, scraping, topCompanies, postedLast7d } = report;
+
+
 
 
   return (
@@ -184,7 +186,7 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                     
 
 
-                    {/* Top Skills */}
+                    {/* Top Skills & Tech */}
                     <Card className="border-slate-200 shadow-sm">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
@@ -204,6 +206,29 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                                 <ProgressBar value={row.count} max={report.jobsBySkill[0]?.count ?? 1} colorClass="bg-rose-500" />
                             </div>
                         ))}
+                    </CardContent>
+                    </Card>
+
+                    {/* Scraping Pulse */}
+                    <Card className="border-slate-200 shadow-sm">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-slate-400" />
+                            Market Pulse
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div>
+                            <div className="text-sm text-slate-500 mb-1">Sources Scanned</div>
+                            <div className="text-2xl font-bold text-slate-900">{scraping.totalSources}</div>
+                        </div>
+                        <div>
+                             <div className="text-sm text-slate-500 mb-1">Freshness (Last 24h)</div>
+                             <div className="flex items-end gap-2">
+                                <div className="text-2xl font-bold text-emerald-600">{scraping.freshness.last24h}</div>
+                                <div className="text-sm text-slate-400 mb-1">new jobs</div>
+                             </div>
+                        </div>
                     </CardContent>
                     </Card>
 

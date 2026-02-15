@@ -205,6 +205,40 @@ export function JobDetails({ job, onBack, isSaved, onToggleSave }: JobDetailsPro
                <Flag className="w-4 h-4" />
                <span>Report this job</span>
             </div>
+
+            {/* Scraping Data / Debug Info */}
+            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 shadow-sm overflow-hidden">
+                <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                    Scraping Data
+                </h3>
+                <div className="space-y-3 text-xs font-mono text-slate-600">
+                    <div>
+                        <span className="block text-slate-400 mb-0.5">Source ID</span>
+                        <div className="break-all bg-white p-1.5 rounded border border-slate-100">{job.id}</div>
+                    </div>
+                    <div>
+                        <span className="block text-slate-400 mb-0.5">Original Source</span>
+                        <div className="font-medium">{job.source}</div>
+                    </div>
+                    <div>
+                        <span className="block text-slate-400 mb-0.5">Category</span>
+                        <div>{job.category || 'N/A'}</div>
+                    </div>
+                    <div>
+                        <span className="block text-slate-400 mb-0.5">Scraped At</span>
+                        <div>{new Date().toISOString().split('T')[0]} (approx)</div>
+                    </div>
+                     <div>
+                        <span className="block text-slate-400 mb-0.5">Raw Tags</span>
+                        <div className="flex flex-wrap gap-1">
+                            {job.tags.map(t => (
+                                <span key={t} className="px-1.5 py-0.5 bg-white border border-slate-100 rounded text-[10px]">{t}</span>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
           </div>
         </div>
       </div>

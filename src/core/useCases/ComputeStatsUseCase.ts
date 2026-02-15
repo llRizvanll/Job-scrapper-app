@@ -42,8 +42,20 @@ export interface SkillBreakdown {
 }
 
 /** Detailed analytics for the report */
+export interface ScrapingStats {
+  totalSources: number;
+  atsStats: { name: string; count: number }[];
+  freshness: {
+    last24h: number;
+    last3d: number;
+    last7d: number;
+  };
+  scrapersActive: number;
+}
+
 export interface JobAnalyticsReport {
   stats: JobStats;
+  scraping: ScrapingStats;
   jobsBySource: SourceBreakdown[];
   topCompanies: CompanyBreakdown[];
   jobsByCategory: CategoryBreakdown[];
@@ -125,8 +137,41 @@ export class ComputeStatsUseCase {
       .map(([skill, count]) => ({ skill, count }))
       .sort((a, b) => b.count - a.count);
 
+
+    // Scraping Stats Calculation
+    const atsMap = new Map<string, number>();
+    jobs.forEach(j => {
+       // Infer ATS from ID (e.g. "source-gh-123" -> Greenhouse)
+       // OR from tags if present
+       const knownATS = ['Greenhouse', 'Lever', 'Ashby', 'Workable', 'SmartRecruiters', 'Breezy', 'Teamtailor'];
+       const atsTag = j.tags.find(t => knownATS.includes(t));
+       if (atsTag) {
+          atsMap.set(atsTag, (atsMap.get(atsTag) ?? 0) + 1);
+       }
+    });
+
+    const atsStats = Array.from(atsMap.entries())
+       .map(([name, count]) => ({ name, count }))
+       .sort((a, b) => b.count - a.count);
+
+    const ms24h = 24 * 60 * 60 * 1000;
+    const ms3d = 3 * 24 * 60 * 60 * 1000;
+    const freshness = {
+       last24h: jobs.filter(j => now - new Date(j.postedAt).getTime() <= ms24h).length,
+       last3d: jobs.filter(j => now - new Date(j.postedAt).getTime() <= ms3d).length,
+       last7d: postedLast7d
+    };
+
+    const scraping: ScrapingStats = {
+       totalSources: sourceMap.size,
+       atsStats,
+       freshness,
+       scrapersActive: sourceMap.size // Proxy for active scrapers
+    };
+
     const report: JobAnalyticsReport = {
       stats,
+      scraping,
       jobsBySource,
       topCompanies,
       jobsByCategory,
