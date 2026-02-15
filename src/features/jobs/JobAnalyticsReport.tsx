@@ -29,8 +29,6 @@ import {
   Building2,
   Globe,
   TrendingUp,
-  MapPin,
-  Laptop,
   Code2
 } from 'lucide-react';
 
@@ -80,10 +78,8 @@ function StatCard({ title, value, subtext, icon: Icon, trend }: any) {
 }
 
 export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportProps) {
-  const { stats, jobsBySource, topCompanies, jobsByCategory, jobsByType, postedLast7d } = report;
-  const maxSource = jobsBySource[0]?.count ?? 1;
-  const maxCategory = jobsByCategory[0]?.count ?? 1;
-  const maxType = jobsByType[0]?.count ?? 1;
+  const { stats, topCompanies, postedLast7d } = report;
+
 
   return (
     <>
@@ -184,46 +180,9 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                     </CardContent>
                 </Card>
 
-                    {/* Job Types */}
-                    <Card className="border-slate-200 shadow-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                            <Briefcase className="w-4 h-4 text-slate-400" />
-                            Job Types
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {jobsByType.slice(0, 5).map(row => (
-                            <div key={row.jobType}>
-                                <div className="flex justify-between text-sm mb-1.5">
-                                    <span className="font-medium text-slate-700">{row.jobType}</span>
-                                    <span className="text-slate-400">{Math.round((row.count / stats.totalJobs) * 100)}%</span>
-                                </div>
-                                <ProgressBar value={row.count} max={maxType} colorClass="bg-slate-800" />
-                            </div>
-                        ))}
-                    </CardContent>
-                    </Card>
+
                     
-                    {/* Categories */}
-                    <Card className="border-slate-200 shadow-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-slate-400" />
-                            Top Categories
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {jobsByCategory.slice(0, 5).map(row => (
-                            <div key={row.category}>
-                                <div className="flex justify-between text-sm mb-1.5">
-                                    <span className="font-medium text-slate-700 truncate max-w-[180px]">{row.category}</span>
-                                </div>
-                                <ProgressBar value={row.count} max={maxCategory} colorClass="bg-[#0055FF]" />
-                            </div>
-                        ))}
-                    </CardContent>
-                    </Card>
+
 
                     {/* Top Skills */}
                     <Card className="border-slate-200 shadow-sm">
@@ -248,25 +207,7 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                     </CardContent>
                     </Card>
 
-                    {/* Top Sources */}
-                    <Card className="border-slate-200 shadow-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                            <Laptop className="w-4 h-4 text-slate-400" />
-                            Top Sources
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {jobsBySource.slice(0, 5).map(row => (
-                            <div key={row.source}>
-                                <div className="flex justify-between text-sm mb-1.5">
-                                    <span className="font-medium text-slate-700 truncate max-w-[180px]">{row.source}</span>
-                                </div>
-                                <ProgressBar value={row.count} max={maxSource} colorClass="bg-violet-500" />
-                            </div>
-                        ))}
-                    </CardContent>
-                    </Card>
+
                 </div>
             </div>
             </section>
