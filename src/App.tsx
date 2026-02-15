@@ -12,9 +12,12 @@ import { FreelancerHubPage } from '@/presentation/pages/FreelancerHubPage';
 import { SavedJobsPage } from '@/presentation/pages/SavedJobsPage';
 import { Toaster } from 'sonner';
 
+import { SplashScreen } from '@/presentation/components/ui/SplashScreen';
+
 export default function App() {
   return (
     <>
+      <SplashScreen />
       <Routes>
         <Route path="/" element={<JobsPage />} />
         <Route path="/job-seekers" element={<JobSeekersPage />} />

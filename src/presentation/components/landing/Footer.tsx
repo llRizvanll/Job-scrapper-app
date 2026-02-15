@@ -7,12 +7,14 @@ export function Footer() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12 mb-16">
           {/* Brand Column */}
-          <div className="space-y-6">
-            <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-1">
-                adune<span className="text-gray-400 font-normal">.app</span>
+          <div className="col-span-1 lg:col-span-4">
+            <Link to="/" className="inline-block mb-6">
+               <img src="/portal_logo.png" alt="A Dune" className="h-30 w-auto hover:opacity-90 transition-opacity" />
             </Link>
+            <p className="text-slate-500 mb-6 max-w-sm">
+               One dune. Every source.
+            </p>
             <div className="flex items-center gap-4">
-               {/* Social icons remain unchanged */}
                <a href="#" className="p-2 bg-gray-100 rounded-full text-gray-600 hover:bg-gray-200 transition-colors">
                   <Twitter className="w-5 h-5" />
                </a>

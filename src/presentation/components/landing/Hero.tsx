@@ -23,7 +23,6 @@ export function Hero() {
           <div className="order-2 lg:order-1 flex justify-center lg:justify-end">
              <img 
                src="/hero-illustration.png" 
-               alt="Remote work illustration" 
                className="w-full max-w-[400px] h-auto object-contain"
              />
           </div>

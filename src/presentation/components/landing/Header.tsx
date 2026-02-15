@@ -23,21 +23,12 @@ export function Header() {
       }`}
     >
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#5D3FD3] rounded-full flex items-center justify-center text-white font-bold text-lg">
-              A
-            </div>
-            <Link to="/" className="flex flex-col items-start -space-y-1">
-              <span className="text-xl font-bold text-gray-900 tracking-tight">
-                A Dune
-              </span>
-              <span className="text-[10px] text-gray-500 font-medium tracking-wide">
-                One dune. Every source.
-              </span>
+            <Link to="/" className="flex items-center gap-3 group">
+              <img src="/portal_logo.png" alt="A Dune Logo" className="h-16 w-auto hover:opacity-90 transition-opacity" />
             </Link>
-          </div>
+
 
           {/* Desktop Navigation - Hidden on smaller screens, visible on xl */}
           <nav className="hidden xl:flex items-center gap-6">
