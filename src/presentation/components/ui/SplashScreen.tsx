@@ -26,7 +26,7 @@ export function SplashScreen() {
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-500">
-      <div className="relative rounded-2xl overflow-hidden shadow-[0_0_50px_-12px_rgba(0,85,255,0.25)] border-4 border-[#0055FF] max-w-4xl w-[90%] md:w-[800px] aspect-video bg-black">
+      <div className="relative rounded-2xl overflow-hidden shadow-[0_0_50px_-12px_rgba(232,65,67,0.25)] border-4 border-primary-500 max-w-4xl w-[90%] md:w-[800px] aspect-video bg-black">
         <video
             ref={videoRef}
             autoPlay

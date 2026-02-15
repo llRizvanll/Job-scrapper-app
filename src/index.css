@@ -4,34 +4,57 @@
 
 @layer base {
   :root {
+    /* Neural-500 #E84143 (Main Brand) -> 359 78% 58% */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    /* #FFFFFF */
+    --foreground: 0 0% 10%;
+    /* #1A1A1A */
+
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 0 0% 10%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 359 78% 58%;
+    /* #E84143 */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 96%;
+    /* #F5F5F5 approx */
+    --secondary-foreground: 339 80% 22%;
+    /* #630B2A Primary-800 for contrast */
+
+    --muted: 0 0% 96%;
+    /* #F5F5F5 */
+    --muted-foreground: 0 0% 42%;
+    /* #6B6B6B */
+
+    --accent: 35 68% 64%;
+    /* #E3AD64 (Gold) */
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 341 75% 40%;
+    /* #B11949 (Primary-600) */
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    /* #E5E5E5 */
+    --input: 0 0% 90%;
+    --ring: 359 78% 58%;
+    /* Primary Ring */
+
     --radius: 0.625rem;
+
+    /* Sidebar matching neutral/light theme */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary: 359 78% 58%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-accent: 0 0% 96%;
+    --sidebar-accent-foreground: 359 78% 58%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 359 78% 58%;
   }
 
   .dark {
@@ -69,6 +92,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans', sans-serif;

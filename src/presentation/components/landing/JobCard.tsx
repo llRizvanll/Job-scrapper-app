@@ -66,7 +66,7 @@ export function JobCard({ job, onSelect, isSaved, onToggleSave }: JobCardProps) 
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-blue-600 transition-colors line-clamp-1 mb-1">
+               <h3 className="font-semibold text-lg text-slate-900 group-hover:text-primary-600 transition-colors line-clamp-1 mb-1">
                  {job.title}
                </h3>
                <div className="flex items-center gap-2 text-[13px] text-slate-500 mb-3">
@@ -82,13 +82,19 @@ export function JobCard({ job, onSelect, isSaved, onToggleSave }: JobCardProps) 
                       </span>
                     </>
                  )}
+
                </div>
             </div>
             <div className="flex flex-col items-end gap-2">
+               {/* Save Button */}
                <Button 
                   variant="ghost" 
                   size="icon" 
-                  className={`h-8 w-8 -mt-2 -mr-2 transition-colors ${isSaved ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-300 hover:text-yellow-400'}`}
+                  className={`h-8 w-8 -mt-2 -mr-2 transition-colors ${
+                    isSaved 
+                      ? 'bg-primary-50 text-primary-500 hover:text-primary-600' 
+                      : 'text-gray-400 hover:text-primary-500'
+                  }`}
                   onClick={(e) => {
                     e.stopPropagation();
                     onToggleSave?.(e);
@@ -115,7 +121,7 @@ export function JobCard({ job, onSelect, isSaved, onToggleSave }: JobCardProps) 
                 </div>
              )}
              {job.tags.slice(0, 4).map(tag => (
-                <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md bg-blue-50/50 border border-blue-100 text-xs font-medium text-blue-600/80">
+                <span key={tag} className="inline-flex items-center px-2 py-1 rounded-md bg-primary-50/50 border border-primary-100 text-xs font-medium text-primary-600/80">
                    {tag}
                 </span>
              ))}

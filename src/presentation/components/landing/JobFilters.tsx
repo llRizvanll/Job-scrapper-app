@@ -120,7 +120,7 @@ export function JobFilters({
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-20">
+    <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 mt-8 relative z-20">
       <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 p-6 border border-slate-100">
         <div className="space-y-4">
           {/* Search Input */}

@@ -25,8 +25,9 @@ export function Header() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <img src="/portal_logo.png" alt="A Dune Logo" className="h-16 w-auto hover:opacity-90 transition-opacity" />
+            <Link to="/" className="flex items-center gap-3">
+              <img src="/adune-logo-rebrand.png" alt="Adune" className="h-12 w-auto md:h-16" />
+              <div className="flex flex-col -ml-2"> </div>
             </Link>
 
 
@@ -52,7 +53,7 @@ export function Header() {
           {/* Actions - Hidden on smaller screens, visible on xl */}
           <div className="hidden xl:flex items-center gap-3">
             <Link to="/sign-up">
-              <Button variant="ghost" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 whitespace-nowrap">
+              <Button variant="ghost" className="text-[15px] font-medium text-primary-800 hover:text-primary-500 hover:bg-gray-50 whitespace-nowrap">
                 Sign up
               </Button>
             </Link>
@@ -65,7 +66,7 @@ export function Header() {
 
           {/* Mobile Menu Button - Visible on lg and below */}
           <button 
-            className="xl:hidden text-gray-600 p-2"
+            className="xl:hidden text-primary-800 p-2"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X /> : <Menu />}
