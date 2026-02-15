@@ -121,9 +121,16 @@ function BlogCard({ post, featured = false }: { post: BlogPost; featured?: boole
   );
 }
 
+import { SEO } from '@/presentation/components/seo/SEO';
+
 export function BlogPage() {
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-100">
+      <SEO 
+        title="Remote Work Blog | Adune"
+        description="Insights, tips, and trends on remote work, careers, and building distributed teams. Read the latest stories from Adune."
+        type="blog"
+      />
       <Header />
       <main className="pt-28 pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1200px] mx-auto">

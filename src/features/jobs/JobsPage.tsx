@@ -16,12 +16,46 @@ import { JobAnalyticsReport } from './JobAnalyticsReport';
 import { Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 
+import { SEO } from '@/presentation/components/seo/SEO';
+
 export function JobsPage() {
   const vm = useJobsPageViewModel();
   
   if (vm.selectedJob) {
+    const job = vm.selectedJob;
+    const structuredData = {
+      "@context": "https://schema.org/",
+      "@type": "JobPosting",
+      "title": job.title,
+      "description": job.description || `Apply for the ${job.title} position at ${job.company}.`,
+      "datePosted": job.postedAt,
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": job.company,
+        "logo": job.companyLogo
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": job.location || "Remote"
+        }
+      },
+      "applicantLocationRequirements": {
+        "@type": "Country",
+        "name": job.location || "Remote"
+      },
+      "employmentType": job.jobType || "FULL_TIME"
+    };
+
     return (
       <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-100">
+        <SEO 
+          title={`${job.title} at ${job.company}`}
+          description={`Apply for the ${job.title} job at ${job.company}. ${job.location ? `Location: ${job.location}.` : ''} Remote work opportunity.`}
+          type="article"
+          structuredData={structuredData}
+        />
         <Header />
         <div className="pt-20">
           <JobDetails 
@@ -43,6 +77,21 @@ export function JobsPage() {
   
   return (
     <div className="min-h-screen bg-white font-sans text-slate-900 selection:bg-blue-100">
+      <SEO 
+        title="Find Remote Jobs | Adune"
+        description="Search thousands of remote jobs from 20+ sources in one place. Adune aggregates remote work opportunities for developers, designers, marketers, and more."
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Adune",
+          "url": "https://adune.app",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://adune.app/?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }}
+      />
       <Header />
       
       <main>
