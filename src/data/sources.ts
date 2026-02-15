@@ -267,6 +267,15 @@ const LEGACY_JOB_SOURCES: JobSource[] = [
     description: 'Remote work community'
   },
   {
+    id: 'open-source-jobs',
+    name: 'Open Source Jobs',
+    url: 'https://open-source-jobs.com/',
+    type: 'html',
+    enabled: true,
+    category: 'Programming',
+    description: 'Open-source focused jobs with outbound apply portals'
+  },
+  {
     id: 'remoterocketship',
     name: 'Remote Rocketship',
     url: 'https://remoterocketship.com/jobs.rss',

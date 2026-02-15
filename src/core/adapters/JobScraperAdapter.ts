@@ -210,6 +210,428 @@ export class JobScraperAdapter implements IJobScraperGateway {
     throw new Error('Max retries exceeded');
   }
 
+  private async fetchTextWithCorsFallback(url: string, options: RequestInit = {}): Promise<string> {
+    const candidates = [url, ...this.corsProxies.map((proxy) => `${proxy}${encodeURIComponent(url)}`)];
+
+    for (const candidate of candidates) {
+      try {
+        const response = await this.fetchWithRetry(
+          candidate,
+          {
+            ...options,
+            headers: {
+              ...DEFAULT_REQUEST_HEADERS,
+              ...(options.headers as Record<string, string> | undefined),
+            },
+          },
+          1
+        );
+        const text = await response.text();
+        if (text.trim().length > 0) return text;
+      } catch {
+        continue;
+      }
+    }
+
+    throw new Error(`Failed to fetch text for ${url}`);
+  }
+
+  private async fetchJsonWithCorsFallback<T>(
+    url: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const candidates = [url, ...this.corsProxies.map((proxy) => `${proxy}${encodeURIComponent(url)}`)];
+
+    for (const candidate of candidates) {
+      try {
+        const response = await this.fetchWithRetry(
+          candidate,
+          {
+            ...options,
+            headers: {
+              Accept: 'application/json',
+              ...DEFAULT_REQUEST_HEADERS,
+              ...(options.headers as Record<string, string> | undefined),
+            },
+          },
+          1
+        );
+        return (await response.json()) as T;
+      } catch {
+        continue;
+      }
+    }
+
+    throw new Error(`Failed to fetch JSON for ${url}`);
+  }
+
+  private static ensureAbsoluteUrl(url: string, fallbackBase: string): string {
+    if (!url) return fallbackBase;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    try {
+      return new URL(url, fallbackBase).toString();
+    } catch {
+      return fallbackBase;
+    }
+  }
+
+  private static normalizePostedAt(value: unknown): string {
+    if (typeof value !== 'string' || !value.trim()) return new Date().toISOString();
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+  }
+
+  private static keywordsMatch(
+    keywords: string[],
+    ...fields: Array<string | undefined | null>
+  ): boolean {
+    if (keywords.length === 0) return true;
+    const haystack = fields
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    return keywords.some((kw) => haystack.includes(kw.toLowerCase()));
+  }
+
+  private static dedupeJobs(jobs: Job[]): Job[] {
+    const seen = new Set<string>();
+    return jobs.filter((job) => {
+      const key = `${job.title.toLowerCase()}::${job.company.toLowerCase()}::${job.url.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  private async fetchATSJobsFromApi(source: JobSource, keywords: string[]): Promise<Job[]> {
+    const ats = source.ats;
+    const companySlug = source.companySlug;
+    const companyName =
+      source.companyName || source.name.replace(/\s*\([^)]*\)\s*$/, '').trim() || 'Unknown Company';
+    if (!ats || !companySlug) return [];
+
+    try {
+      switch (ats) {
+        case 'greenhouse':
+          return await this.fetchGreenhouseJobs(source, companySlug, companyName, keywords);
+        case 'lever':
+          return await this.fetchLeverJobs(source, companySlug, companyName, keywords);
+        case 'ashby':
+          return await this.fetchAshbyJobs(source, companySlug, companyName, keywords);
+        case 'workable':
+          return await this.fetchWorkableJobs(source, companySlug, companyName, keywords);
+        case 'smartrecruiters':
+          return await this.fetchSmartRecruitersJobs(source, companySlug, companyName, keywords);
+        case 'breezy':
+          return await this.fetchBreezyJobs(source, companySlug, companyName, keywords);
+        case 'teamtailor':
+          return await this.fetchTeamtailorJobs(source, companySlug, companyName, keywords);
+        default:
+          return [];
+      }
+    } catch (error) {
+      console.warn(`ATS API strategy error for ${source.name}:`, error);
+      return [];
+    }
+  }
+
+  private async fetchGreenhouseJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const urls = [
+      `https://boards-api.greenhouse.io/v1/boards/${companySlug}/jobs`,
+      `https://boards.greenhouse.io/${companySlug}/jobs.json`,
+    ];
+
+    for (const url of urls) {
+      try {
+        const data = await this.fetchJsonWithCorsFallback<Record<string, unknown>>(url);
+        const raw = (Array.isArray(data.jobs) ? data.jobs : []) as Record<string, unknown>[];
+        const jobs = raw
+          .map((item, index) => {
+            const title = (item.title as string) || '';
+            const location = ((item.location as Record<string, unknown> | undefined)?.name as string) || 'Remote';
+            const link = (item.absolute_url as string) || (item.url as string) || source.url;
+            if (!title) return null;
+            if (!JobScraperAdapter.keywordsMatch(keywords, title, location, companyName)) return null;
+            return {
+              id: `${source.id}-gh-${item.id ?? index}`,
+              title,
+              company: companyName,
+              location,
+              jobType: 'Full-time',
+              description: '',
+              url: JobScraperAdapter.ensureAbsoluteUrl(link, source.url),
+              postedAt: JobScraperAdapter.normalizePostedAt(item.updated_at),
+              tags: ['Greenhouse', source.category],
+              source: source.name,
+              category: source.category,
+            } satisfies Job;
+          })
+          .filter(Boolean) as Job[];
+        if (jobs.length > 0) return jobs;
+      } catch {
+        continue;
+      }
+    }
+
+    return [];
+  }
+
+  private async fetchLeverJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const urls = [
+      `https://api.lever.co/v0/postings/${companySlug}?mode=json`,
+      `https://api.lever.co/v0/postings/${companySlug}?skip=0&limit=200&mode=json`,
+    ];
+
+    const all: Job[] = [];
+    for (const url of urls) {
+      try {
+        const data = await this.fetchJsonWithCorsFallback<unknown[]>(url);
+        if (!Array.isArray(data)) continue;
+        const jobs = data
+          .map((item, index) => {
+            const obj = item as Record<string, unknown>;
+            const title = (obj.text as string) || '';
+            if (!title) return null;
+            const categories = (obj.categories as Record<string, unknown> | undefined) || {};
+            const location = (categories.location as string) || 'Remote';
+            const department = (categories.team as string) || (categories.department as string) || '';
+            if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+            return {
+              id: `${source.id}-lever-${obj.id ?? index}`,
+              title,
+              company: companyName,
+              location,
+              jobType: ((obj.commitment as string) || 'Full-time').toString(),
+              description: department ? `Department: ${department}` : '',
+              url: JobScraperAdapter.ensureAbsoluteUrl((obj.applyUrl as string) || source.url, source.url),
+              postedAt: JobScraperAdapter.normalizePostedAt(obj.createdAt),
+              tags: ['Lever', source.category],
+              source: source.name,
+              category: source.category,
+            } satisfies Job;
+          })
+          .filter(Boolean) as Job[];
+        all.push(...jobs);
+      } catch {
+        continue;
+      }
+    }
+
+    return JobScraperAdapter.dedupeJobs(all);
+  }
+
+  private async fetchAshbyJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const url = 'https://api.ashbyhq.com/posting-api/job-board';
+    const body = {
+      operationName: 'GetJobBoard',
+      variables: { organizationHostedJobsPageName: companySlug },
+      query:
+        'query GetJobBoard($organizationHostedJobsPageName: String!) { jobBoard: organizationHostedJobsPage(organizationHostedJobsPageName: $organizationHostedJobsPageName) { jobPostings { id title locationName departmentName employmentType publishedAt externalLink applicationLink } } }',
+    };
+
+    const data = await this.fetchJsonWithCorsFallback<Record<string, unknown>>(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const raw = ((((data.data as Record<string, unknown> | undefined)?.jobBoard as Record<string, unknown> | undefined)
+      ?.jobPostings || []) as unknown[]) as Record<string, unknown>[];
+
+    return raw
+      .map((item, index) => {
+        const title = (item.title as string) || '';
+        const location = (item.locationName as string) || 'Remote';
+        const department = (item.departmentName as string) || '';
+        if (!title) return null;
+        if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+        return {
+          id: `${source.id}-ashby-${item.id ?? index}`,
+          title,
+          company: companyName,
+          location,
+          jobType: ((item.employmentType as string) || 'Full-time').toString(),
+          description: department ? `Department: ${department}` : '',
+          url: JobScraperAdapter.ensureAbsoluteUrl(
+            (item.applicationLink as string) || (item.externalLink as string) || source.url,
+            source.url
+          ),
+          postedAt: JobScraperAdapter.normalizePostedAt(item.publishedAt),
+          tags: ['Ashby', source.category],
+          source: source.name,
+          category: source.category,
+        } satisfies Job;
+      })
+      .filter(Boolean) as Job[];
+  }
+
+  private async fetchWorkableJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const url = `https://apply.workable.com/api/v1/widget/accounts/${companySlug}?details=true`;
+    const data = await this.fetchJsonWithCorsFallback<Record<string, unknown>>(url);
+    const raw = (Array.isArray(data.jobs) ? data.jobs : []) as Record<string, unknown>[];
+
+    return raw
+      .map((item, index) => {
+        const title = (item.title as string) || '';
+        if (!title) return null;
+        const locationObj = (item.location as Record<string, unknown> | undefined) || {};
+        const location =
+          (locationObj.city as string) ||
+          (locationObj.country as string) ||
+          (locationObj.location_str as string) ||
+          'Remote';
+        const department = (item.department as string) || '';
+        if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+        const shortcode = (item.shortcode as string) || '';
+        return {
+          id: `${source.id}-workable-${item.id ?? index}`,
+          title,
+          company: companyName,
+          location,
+          jobType: ((item.employment_type as string) || 'Full-time').toString(),
+          description: department ? `Department: ${department}` : '',
+          url: JobScraperAdapter.ensureAbsoluteUrl(
+            (item.url as string) || (shortcode ? `https://apply.workable.com/${companySlug}/j/${shortcode}` : source.url),
+            source.url
+          ),
+          postedAt: JobScraperAdapter.normalizePostedAt(item.published_on),
+          tags: ['Workable', source.category],
+          source: source.name,
+          category: source.category,
+        } satisfies Job;
+      })
+      .filter(Boolean) as Job[];
+  }
+
+  private async fetchSmartRecruitersJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const url = `https://api.smartrecruiters.com/v1/companies/${companySlug}/postings`;
+    const data = await this.fetchJsonWithCorsFallback<Record<string, unknown>>(url);
+    const raw = (Array.isArray(data.content) ? data.content : []) as Record<string, unknown>[];
+
+    return raw
+      .map((item, index) => {
+        const title = (item.name as string) || '';
+        if (!title) return null;
+        const locationObj = (item.location as Record<string, unknown> | undefined) || {};
+        const location =
+          (locationObj.city as string) ||
+          (locationObj.region as string) ||
+          (locationObj.country as string) ||
+          'Remote';
+        const departmentObj = (item.department as Record<string, unknown> | undefined) || {};
+        const department = (departmentObj.label as string) || '';
+        if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+        return {
+          id: `${source.id}-sr-${item.id ?? index}`,
+          title,
+          company: companyName,
+          location,
+          jobType: ((item.typeOfEmployment as string) || 'Full-time').toString(),
+          description: department ? `Department: ${department}` : '',
+          url: JobScraperAdapter.ensureAbsoluteUrl((item.ref as string) || source.url, source.url),
+          postedAt: JobScraperAdapter.normalizePostedAt(item.releasedDate),
+          tags: ['SmartRecruiters', source.category],
+          source: source.name,
+          category: source.category,
+        } satisfies Job;
+      })
+      .filter(Boolean) as Job[];
+  }
+
+  private async fetchBreezyJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const url = `https://${companySlug}.breezy.hr/json`;
+    const data = await this.fetchJsonWithCorsFallback<unknown[]>(url);
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .map((item, index) => {
+        const obj = item as Record<string, unknown>;
+        const title = (obj.name as string) || (obj.title as string) || '';
+        if (!title) return null;
+        const location = (obj.location as string) || 'Remote';
+        const department = (obj.department as string) || '';
+        if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+        return {
+          id: `${source.id}-breezy-${obj.id ?? index}`,
+          title,
+          company: companyName,
+          location,
+          jobType: ((obj.type as string) || 'Full-time').toString(),
+          description: department ? `Department: ${department}` : '',
+          url: JobScraperAdapter.ensureAbsoluteUrl((obj.url as string) || source.url, source.url),
+          postedAt: JobScraperAdapter.normalizePostedAt(obj.created_date),
+          tags: ['Breezy', source.category],
+          source: source.name,
+          category: source.category,
+        } satisfies Job;
+      })
+      .filter(Boolean) as Job[];
+  }
+
+  private async fetchTeamtailorJobs(
+    source: JobSource,
+    companySlug: string,
+    companyName: string,
+    keywords: string[]
+  ): Promise<Job[]> {
+    const url = `https://${companySlug}.teamtailor.com/jobs.json`;
+    const data = await this.fetchJsonWithCorsFallback<Record<string, unknown>>(url);
+    const raw = (Array.isArray(data.jobs) ? data.jobs : []) as Record<string, unknown>[];
+
+    return raw
+      .map((item, index) => {
+        const title = (item.title as string) || '';
+        if (!title) return null;
+        const location = (item.location as string) || 'Remote';
+        const department = (item.department as string) || '';
+        if (!JobScraperAdapter.keywordsMatch(keywords, title, location, department, companyName)) return null;
+        return {
+          id: `${source.id}-tt-${item.id ?? index}`,
+          title,
+          company: companyName,
+          location,
+          jobType: ((item.employment_type as string) || 'Full-time').toString(),
+          description: department ? `Department: ${department}` : '',
+          url: JobScraperAdapter.ensureAbsoluteUrl((item.url as string) || source.url, source.url),
+          postedAt: JobScraperAdapter.normalizePostedAt(item.published_at),
+          tags: ['Teamtailor', source.category],
+          source: source.name,
+          category: source.category,
+        } satisfies Job;
+      })
+      .filter(Boolean) as Job[];
+  }
+
   private async parseRSSFeed(source: JobSource, keywords: string[] = []): Promise<Job[]> {
     const cacheKey = `rss-${source.id}-${keywords.join(',')}`;
     const cached = this.cache.get(cacheKey);
@@ -525,30 +947,14 @@ export class JobScraperAdapter implements IJobScraperGateway {
 
     try {
       await this.ensureRateLimit();
-      let htmlText = '';
-      for (const proxy of this.corsProxies) {
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), getConfig().scraping.requestTimeoutMs);
-          const response = await fetch(`${proxy}${encodeURIComponent(source.url)}`, {
-            signal: controller.signal,
-            headers: DEFAULT_REQUEST_HEADERS,
-          });
-          clearTimeout(timeout);
-          if (response.ok) {
-            htmlText = await response.text();
-            break;
-          }
-        } catch {
-          continue;
-        }
-      }
-
-      if (!htmlText) throw new Error('Failed to fetch ATS page');
+      const apiJobs = await this.fetchATSJobsFromApi(source, keywords);
+      const htmlText = await this.fetchTextWithCorsFallback(source.url, {
+        headers: DEFAULT_REQUEST_HEADERS,
+      });
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlText, 'text/html');
-      const jobs: Job[] = [];
+      const htmlJobs: Job[] = [];
       const { selectors } = config;
       const companyName = source.companyName || source.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
@@ -577,7 +983,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
           if (!hasMatch) return;
         }
 
-        jobs.push({
+        htmlJobs.push({
           id: `${source.id}-${index}-${Date.now()}`,
           title,
           company: companyName,
@@ -592,10 +998,16 @@ export class JobScraperAdapter implements IJobScraperGateway {
         });
       });
 
-      this.cache.set(cacheKey, jobs);
-      return jobs;
+      const merged = JobScraperAdapter.dedupeJobs([...apiJobs, ...htmlJobs]);
+      this.cache.set(cacheKey, merged);
+      return merged;
     } catch (error) {
       console.warn(`ATS parse error for ${source.name}:`, error);
+      const apiOnly = await this.fetchATSJobsFromApi(source, keywords);
+      if (apiOnly.length > 0) {
+        this.cache.set(cacheKey, apiOnly);
+        return apiOnly;
+      }
       return [];
     }
   }
@@ -845,6 +1257,135 @@ export class JobScraperAdapter implements IJobScraperGateway {
     }
   }
 
+  private async fetchOpenSourceJobs(keywords: string[] = []): Promise<Job[]> {
+    const cacheKey = `open-source-jobs-${keywords.join(',')}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached) return cached;
+
+    const sourceUrl = 'https://open-source-jobs.com/';
+
+    try {
+      await this.ensureRateLimit();
+      const htmlText = await this.fetchTextWithCorsFallback(sourceUrl, {
+        headers: DEFAULT_REQUEST_HEADERS,
+      });
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlText, 'text/html');
+      const cards = Array.from(
+        doc.querySelectorAll(
+          '.job, .job-card, .job-item, .job_listing, article, li, [class*="job"]'
+        )
+      ).slice(0, 80);
+
+      const sourceHost = new URL(sourceUrl).hostname;
+      const jobs = await Promise.all(
+        cards.map(async (card, index) => {
+          const linkEl =
+            card.querySelector('a[href*="/jobs/"], a[href*="/job/"], a[href]') ||
+            card.querySelector('a');
+          const rawHref = linkEl?.getAttribute('href') || '';
+          if (!rawHref) return null;
+
+          const detailsUrl = JobScraperAdapter.ensureAbsoluteUrl(rawHref, sourceUrl);
+          const title =
+            card.querySelector('h1, h2, h3, h4, .title, [class*="title"]')?.textContent?.trim() ||
+            linkEl?.textContent?.trim() ||
+            '';
+          if (!title || title.length < 2) return null;
+
+          const company =
+            card.querySelector('.company, [class*="company"], [class*="employer"]')
+              ?.textContent?.trim() || 'Unknown Company';
+          const location =
+            card.querySelector('.location, [class*="location"], [class*="place"]')
+              ?.textContent?.trim() || 'Remote';
+          const portal =
+            card.querySelector('.portal, [class*="portal"], .source, [class*="source"]')
+              ?.textContent?.trim() || '';
+
+          const applyUrl = await this.extractOpenSourceApplyUrl(detailsUrl, sourceHost);
+          const applyHost = (() => {
+            try {
+              return new URL(applyUrl).hostname.replace(/^www\./, '');
+            } catch {
+              return '';
+            }
+          })();
+
+          if (!JobScraperAdapter.keywordsMatch(keywords, title, company, location, portal, applyHost)) {
+            return null;
+          }
+
+          return {
+            id: `open-source-jobs-${index}-${Date.now()}`,
+            title,
+            company,
+            location,
+            jobType: 'Full-time',
+            description: portal || applyHost ? `Apply portal: ${portal || applyHost}` : 'Open Source Jobs listing',
+            url: applyUrl,
+            postedAt: new Date().toISOString(),
+            tags: ['Open Source Jobs', portal || applyHost].filter(Boolean),
+            source: 'Open Source Jobs',
+            category: 'Programming',
+          } satisfies Job;
+        })
+      );
+
+      const parsed = (jobs.filter(Boolean) as Job[]).slice(0, 120);
+      const deduped = JobScraperAdapter.dedupeJobs(parsed);
+      this.cache.set(cacheKey, deduped);
+      return deduped;
+    } catch (error) {
+      console.warn('Open Source Jobs parse error:', error);
+      return [];
+    }
+  }
+
+  private async extractOpenSourceApplyUrl(detailsUrl: string, sourceHost: string): Promise<string> {
+    try {
+      const detailsHost = new URL(detailsUrl).hostname;
+      if (detailsHost !== sourceHost) return detailsUrl;
+
+      const html = await this.fetchTextWithCorsFallback(detailsUrl, {
+        headers: DEFAULT_REQUEST_HEADERS,
+      });
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const links = Array.from(doc.querySelectorAll('a[href]'));
+
+      const scored = links
+        .map((link) => {
+          const href = link.getAttribute('href') || '';
+          const text = (link.textContent || '').toLowerCase();
+          const absolute = JobScraperAdapter.ensureAbsoluteUrl(href, detailsUrl);
+          let host = '';
+          try {
+            host = new URL(absolute).hostname;
+          } catch {
+            return null;
+          }
+          if (!host || host === sourceHost) return null;
+          if (!absolute.startsWith('http://') && !absolute.startsWith('https://')) return null;
+          const score =
+            (/(apply|job|careers?|portal|official|company)/i.test(text) ? 2 : 0) +
+            (/(greenhouse|lever|ashby|workable|smartrecruiters|teamtailor|bamboohr|myworkdayjobs|jobs\.)/i.test(
+              host
+            )
+              ? 2
+              : 0);
+          return { absolute, score };
+        })
+        .filter((v): v is { absolute: string; score: number } => v !== null)
+        .sort((a, b) => b.score - a.score);
+
+      return scored[0]?.absolute || detailsUrl;
+    } catch {
+      return detailsUrl;
+    }
+  }
+
   async fetchFromSource(source: JobSource, keywords: string[] = []): Promise<Job[]> {
     const cacheKey = `${source.type}-${source.id}-${keywords.join(',')}`;
     const cached = this.cache.get(cacheKey);
@@ -864,6 +1405,9 @@ export class JobScraperAdapter implements IJobScraperGateway {
         break;
       case 'hn-jobs':
         jobs = await this.fetchHackerNewsJobs(keywords);
+        break;
+      case 'open-source-jobs':
+        jobs = await this.fetchOpenSourceJobs(keywords);
         break;
       default:
         if (source.type === 'ats') {
@@ -906,18 +1450,22 @@ export class JobScraperAdapter implements IJobScraperGateway {
       this.workerPool.add(async () => {
         try {
           const jobs = await this.fetchFromSource(source, config.keywords);
+          const addedJobs: Job[] = [];
           jobs.forEach((job) => {
-            const key = `${job.title.toLowerCase()}-${job.company.toLowerCase()}`;
+            const key = `${job.title.toLowerCase()}-${job.company.toLowerCase()}-${job.url.toLowerCase()}`;
             const exists = allJobs.some(
-              (j) => `${j.title.toLowerCase()}-${j.company.toLowerCase()}` === key
+              (j) => `${j.title.toLowerCase()}-${j.company.toLowerCase()}-${j.url.toLowerCase()}` === key
             );
-            if (!exists) allJobs.push(job);
+            if (!exists) {
+              allJobs.push(job);
+              addedJobs.push(job);
+            }
           });
           completedCount++;
-          onProgress?.(source.name, jobs.length, completedCount);
+          onProgress?.(source.name, source.id, addedJobs.length, completedCount, addedJobs);
         } catch {
           completedCount++;
-          onProgress?.(source.name, 0, completedCount);
+          onProgress?.(source.name, source.id, 0, completedCount, []);
         }
       })
     );

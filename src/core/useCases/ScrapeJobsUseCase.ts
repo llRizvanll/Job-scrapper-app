@@ -33,14 +33,16 @@ export class ScrapeJobsUseCase {
 
     let totalFound = 0;
 
-    const progressCallback: ScrapeProgressCallback = (sourceName, count, completed) => {
+    const progressCallback: ScrapeProgressCallback = (sourceName, sourceId, count, completed, newJobs = []) => {
       totalFound += count;
       onProgress?.({
         current: completed,
         total: config.selectedSources.length,
         currentSource: sourceName,
+        currentSourceId: sourceId,
         jobsFound: totalFound,
         isComplete: false,
+        newJobs,
       });
     };
 
@@ -53,6 +55,7 @@ export class ScrapeJobsUseCase {
       currentSource: '',
       jobsFound: jobs.length,
       isComplete: true,
+      newJobs: [],
     });
 
     return { jobs };

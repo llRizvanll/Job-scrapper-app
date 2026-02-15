@@ -10,7 +10,7 @@ export interface AppConfig {
     cacheMaxSize: number;
     requestTimeoutMs: number;
     maxRetries: number;
-    /** Delay in ms between requests (rate limit). Use 2000 for ~once per 2s; 24h cache recommended. */
+    /** Delay in ms between requests (rate limit). Keep low because source list is large; cache handles refresh frequency. */
     rateLimitDelayMs: number;
   };
   keywords: {
@@ -30,7 +30,7 @@ const DEFAULT_CONFIG: AppConfig = {
     cacheMaxSize: 500,
     requestTimeoutMs: 10000,
     maxRetries: 2,
-    rateLimitDelayMs: 2000,
+    rateLimitDelayMs: 150,
   },
   keywords: {
     default: [], // No keyword filter at scrape time; load all jobs. User filters client-side via search & filters.

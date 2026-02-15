@@ -26,7 +26,8 @@ import {
   Globe,
   TrendingUp,
   MapPin,
-  Laptop
+  Laptop,
+  Code2
 } from 'lucide-react';
 
 interface JobAnalyticsReportProps {
@@ -209,6 +210,28 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                              <span className="font-medium text-slate-700 truncate max-w-[180px]">{row.category}</span>
                           </div>
                           <ProgressBar value={row.count} max={maxCategory} colorClass="bg-[#0055FF]" />
+                       </div>
+                    ))}
+                 </CardContent>
+              </Card>
+
+
+
+              {/* Top Skills */}
+              <Card className="border-slate-200 shadow-sm">
+                 <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-semibold text-slate-900 flex items-center gap-2">
+                        <Code2 className="w-4 h-4 text-slate-400" />
+                        Top Skills & Tech
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="space-y-4">
+                    {report.jobsBySkill && report.jobsBySkill.slice(0, 8).map(row => (
+                       <div key={row.skill}>
+                          <div className="flex justify-between text-sm mb-1.5">
+                             <span className="font-medium text-slate-700 truncate max-w-[180px]">{row.skill}</span>
+                          </div>
+                          <ProgressBar value={row.count} max={report.jobsBySkill[0]?.count ?? 1} colorClass="bg-rose-500" />
                        </div>
                     ))}
                  </CardContent>

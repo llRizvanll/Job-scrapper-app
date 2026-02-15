@@ -35,6 +35,12 @@ export interface JobTypeBreakdown {
   count: number;
 }
 
+/** One row in jobs-by-skill breakdown */
+export interface SkillBreakdown {
+  skill: string;
+  count: number;
+}
+
 /** Detailed analytics for the report */
 export interface JobAnalyticsReport {
   stats: JobStats;
@@ -42,6 +48,7 @@ export interface JobAnalyticsReport {
   topCompanies: CompanyBreakdown[];
   jobsByCategory: CategoryBreakdown[];
   jobsByType: JobTypeBreakdown[];
+  jobsBySkill: SkillBreakdown[];
   postedLast7d: number;
   postedLast30d: number;
 }
@@ -76,6 +83,7 @@ export class ComputeStatsUseCase {
     const companyMap = new Map<string, number>();
     const categoryMap = new Map<string, number>();
     const jobTypeMap = new Map<string, number>();
+    const skillMap = new Map<string, number>();
 
     jobs.forEach((j) => {
       const src = j.source || 'Unknown';
@@ -86,6 +94,14 @@ export class ComputeStatsUseCase {
       categoryMap.set(cat, (categoryMap.get(cat) ?? 0) + 1);
       const type = j.jobType?.trim() || 'Full-time';
       jobTypeMap.set(type, (jobTypeMap.get(type) ?? 0) + 1);
+      
+      // Skills (Tags)
+      if (j.tags && j.tags.length > 0) {
+        j.tags.forEach(tag => {
+          const t = tag.trim();
+          if (t) skillMap.set(t, (skillMap.get(t) ?? 0) + 1);
+        });
+      }
     });
 
     const jobsBySource: SourceBreakdown[] = Array.from(sourceMap.entries())
@@ -105,12 +121,17 @@ export class ComputeStatsUseCase {
       .map(([jobType, count]) => ({ jobType, count }))
       .sort((a, b) => b.count - a.count);
 
+    const jobsBySkill: SkillBreakdown[] = Array.from(skillMap.entries())
+      .map(([skill, count]) => ({ skill, count }))
+      .sort((a, b) => b.count - a.count);
+
     const report: JobAnalyticsReport = {
       stats,
       jobsBySource,
       topCompanies,
       jobsByCategory,
       jobsByType,
+      jobsBySkill,
       postedLast7d,
       postedLast30d,
     };

@@ -88,11 +88,13 @@ export function JobsPage() {
               </div>
             )}
 
-            {/* Subtle "updating" when refreshing in background with cache */}
-            {vm.backgroundRefreshing && vm.jobs.length > 0 && (
+            {/* Subtle "updating" when refreshing in background or manual search with cache */}
+            {(vm.backgroundRefreshing || vm.loading) && vm.jobs.length > 0 && (
               <div className="max-w-xl mx-auto mb-6 flex items-center gap-3 rounded-full bg-blue-50 border border-blue-100 px-4 py-2.5 text-sm text-blue-700">
                 <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-                <span>Updating jobs… {vm.scrapeProgress.current} / {vm.scrapeProgress.total} sources</span>
+                <span>
+                   {vm.loading ? 'Searching...' : 'Updating jobs…'} {vm.scrapeProgress.current} / {vm.scrapeProgress.total} sources
+                </span>
               </div>
             )}
 

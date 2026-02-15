@@ -29,22 +29,40 @@ function getInitialJobs(): Job[] {
   return JobCacheService.getCachedJobs();
 }
 
+function mergeUniqueJobs(existing: Job[], incoming: Job[]): Job[] {
+  if (incoming.length === 0) return existing;
+  const seen = new Set(
+    existing.map((j) => `${j.title.toLowerCase()}::${j.company.toLowerCase()}::${j.url.toLowerCase()}`)
+  );
+  const merged = [...existing];
+  for (const job of incoming) {
+    const key = `${job.title.toLowerCase()}::${job.company.toLowerCase()}::${job.url.toLowerCase()}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      merged.push(job);
+    }
+  }
+  return merged;
+}
+
 export function useJobsPageViewModel() {
   const config = getConfig();
   const jobsPerBatch = config.scraping.jobsPerBatch;
   const defaultKeywords = config.keywords.default;
+  const cacheTtlMs = config.scraping.cacheTtlMs;
+  const initialJobs = getInitialJobs();
 
-  const [jobs, setJobs] = useState<Job[]>(getInitialJobs);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [displayedJobs, setDisplayedJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasScraped, setHasScraped] = useState(() => getInitialJobs().length > 0);
+  const [hasScraped, setHasScraped] = useState(() => initialJobs.length > 0);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeKeywords, setActiveKeywords] = useState<string[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(() => initialJobs.length > 0);
   const [showSources, setShowSources] = useState(false);
   const [showCustomSource, setShowCustomSource] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(JobCacheService.getLastUpdated());
   const [customSources, setCustomSources] = useState<JobSource[]>(() =>
     manageCustomSourcesUseCase.getCustomSources()
   );
@@ -64,39 +82,107 @@ export function useJobsPageViewModel() {
   const loaderRef = useRef<HTMLDivElement>(null);
 
   // On load: show cached jobs immediately; run scrape in parallel (background)
+  // On load: resume active session or start new one parallely
   useEffect(() => {
     const runBackgroundScrape = async () => {
+      const { sources: allSourceList } = getSourcesUseCase.execute();
+      const enabledSources = allSourceList.filter((s) => s.enabled).map((s) => s.id);
+      
+      let sourcesToScrape = enabledSources;
+      let isResuming = false;
       const cachedCount = JobCacheService.getCachedJobs().length;
-      const isFirstLoadNoCache = cachedCount === 0;
 
-      if (isFirstLoadNoCache) {
+      // Check for active session to resume
+      const session = JobCacheService.getSession();
+      const SESSION_TTL = 30 * 60 * 1000; // 30 minutes to resume
+      
+      if (session && session.status === 'running' && (Date.now() - session.startedAt < SESSION_TTL)) {
+        // Resume session: filter out completed sources
+        const completedSet = new Set(session.completedSources);
+        sourcesToScrape = enabledSources.filter(id => !completedSet.has(id));
+        isResuming = true;
+        
+        if (sourcesToScrape.length === 0) {
+           JobCacheService.endSession();
+           setBackgroundRefreshing(false);
+           setScrapeProgress(prev => ({ ...prev, isComplete: true }));
+           return;
+        }
+      } else {
+        // Start new session logic
+        const cacheFresh = JobCacheService.isCacheFresh(cacheTtlMs);
+        if (cachedCount > 0 && cacheFresh) {
+          setBackgroundRefreshing(false);
+          setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
+          return;
+        }
+        JobCacheService.startSession(enabledSources.length);
+      }
+
+      if (cachedCount === 0) {
         setLoading(true);
       } else {
         setBackgroundRefreshing(true);
       }
-      setScrapeProgress((prev) => ({ ...prev, isComplete: false }));
-
-      const { sources: allSourceList } = getSourcesUseCase.execute();
-      const sourcesToUse =
-        allSourceList.filter((s) => s.enabled).map((s) => s.id);
+      
+      // If resuming, set initial progress to what we know
+      setScrapeProgress((prev) => ({ 
+        ...prev, 
+        current: isResuming ? (enabledSources.length - sourcesToScrape.length) : 0,
+        total: enabledSources.length,
+        isComplete: false 
+      }));
 
       try {
         const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
           {
             keywords: [], // No keyword filter: fetch all jobs; user filters client-side after load
-            selectedSources: sourcesToUse,
+            selectedSources: sourcesToScrape,
             maxJobsPerSource: 100,
           },
-          (progress) => setScrapeProgress(progress)
+          (progress) => {
+            // progress.current is local to this batch (0 to sourcesToScrape.length)
+            // We need to map it to global progress if resuming
+            const globalCurrent = isResuming 
+               ? (enabledSources.length - sourcesToScrape.length) + progress.current
+               : progress.current;
+
+            setScrapeProgress({
+               ...progress,
+               current: globalCurrent,
+               total: enabledSources.length
+            });
+
+            if (progress.currentSourceId) {
+              JobCacheService.markSourceComplete(progress.currentSourceId);
+            }
+
+            if ((progress.newJobs?.length || 0) > 0) {
+              setJobs((prev) => {
+                const merged = mergeUniqueJobs(prev, progress.newJobs || []);
+                JobCacheService.saveJobs(merged);
+                return merged;
+              });
+              setLastUpdated(new Date());
+              setHasScraped(true);
+              setShowFilters(true);
+            }
+          }
         );
 
         if (scrapedJobs.length > 0) {
-          setJobs(scrapedJobs);
-          JobCacheService.saveJobs(scrapedJobs);
-          setLastUpdated(new Date());
-          setHasScraped(true);
-          setShowFilters(true); // Show filter options once data is loaded
+           // Final merge to be safe, though progress updates handle it
+           setJobs(prev => {
+              const merged = mergeUniqueJobs(prev, scrapedJobs);
+              JobCacheService.saveJobs(merged);
+              return merged;
+           });
+           setLastUpdated(new Date());
+           setHasScraped(true);
+           setShowFilters(true);
         }
+        
+        JobCacheService.endSession();
       } catch {
         // Keep existing jobs (cache)
       } finally {
@@ -107,7 +193,7 @@ export function useJobsPageViewModel() {
     };
 
     runBackgroundScrape();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- run once on mount 
+  }, [cacheTtlMs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
@@ -175,7 +261,17 @@ export function useJobsPageViewModel() {
           selectedSources: sourcesToUse,
           maxJobsPerSource: 100,
         },
-        (progress) => setScrapeProgress(progress)
+        (progress) => {
+          setScrapeProgress(progress);
+          if ((progress.newJobs?.length || 0) > 0) {
+            setJobs((prev) => {
+              const merged = mergeUniqueJobs(prev, progress.newJobs || []);
+              JobCacheService.saveJobs(merged);
+              return merged;
+            });
+            setLastUpdated(new Date());
+          }
+        }
       );
 
       if (scrapedJobs.length > 0) {

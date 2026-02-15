@@ -1,6 +1,12 @@
 import type { Job, JobSource, ScrapeConfig } from '../entities';
 
-export type ScrapeProgressCallback = (source: string, count: number, total: number) => void;
+export type ScrapeProgressCallback = (
+  source: string,
+  sourceId: string,
+  count: number,
+  total: number,
+  newJobs?: Job[]
+) => void;
 
 export interface IJobScraperGateway {
   scrapeJobs(config: ScrapeConfig, onProgress?: ScrapeProgressCallback): Promise<Job[]>;
