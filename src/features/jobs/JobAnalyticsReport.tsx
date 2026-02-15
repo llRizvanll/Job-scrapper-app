@@ -235,7 +235,7 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {report.jobsBySkill && report.jobsBySkill
-                            .filter(row => !['Frontend', 'Backend', 'Fullstack', 'DevOps', 'Mobile', 'Data Science', 'Product', 'Design', 'Marketing', 'Sales', 'Finance', 'HR', 'Legal', 'Operations', 'Writing', 'Customer Support', 'Remote Specialists', 'Greenhouse', 'ATS - Greenhouse'].includes(row.skill))
+                            .filter(row => !['Frontend', 'Backend', 'Fullstack', 'DevOps', 'Mobile', 'Data Science', 'Product', 'Design', 'Marketing', 'Sales', 'Finance', 'HR', 'Legal', 'Operations', 'Writing', 'Customer Support', 'Remote Specialists', 'Greenhouse', 'SmartRecruiters', 'Lever', 'Ashby', 'Workable', 'Breezy', 'Teamtailor', 'Remote', 'App'].includes(row.skill) && !row.skill.startsWith('ATS -'))
                             .slice(0, 8)
                             .map(row => (
                             <div key={row.skill}>
