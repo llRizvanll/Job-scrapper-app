@@ -60,8 +60,12 @@ export function Footer() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-primary-800/30 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-sm text-primary-200/60">
-            Copyright © {new Date().getFullYear()} Adune, Inc. All rights reserved.
+          <div className="flex flex-col md:flex-row items-center gap-4 text-sm text-primary-200/60">
+            <span>Copyright © {new Date().getFullYear()} Adune, Inc. All rights reserved.</span>
+            <span className="hidden md:inline">•</span>
+            <span>
+              Developed with love by <a href="https://rizvan.work" target="_blank" rel="noopener noreferrer" className="text-primary-100 hover:text-white transition-colors font-medium">Rizvan</a>
+            </span>
           </div>
           <div className="flex items-center gap-6 text-sm text-primary-200/80 font-medium">
              <a href="#" className="hover:text-white transition-colors">Terms</a>
