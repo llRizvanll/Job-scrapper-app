@@ -7,6 +7,8 @@ import type { IJobScraperGateway, ScrapeProgressCallback } from '../ports';
 import { getConfig } from '@/config';
 import { ATS_CONFIG } from '@/data/atsConfig';
 import { TagExtractor } from '../services/TagExtractor';
+import { JobFirestoreService } from '../services/JobFirestoreService';
+import { JobArchiveService } from '../services/JobArchiveService';
 
 // Fast in-memory cache with LRU eviction
 class FastCache {
@@ -800,6 +802,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
         const location = (item.location as string) || (item.place as string) || (item.city as string) || 'Remote';
         const salary = (item.salary as string) || (item.compensation as string) || (item.pay as string) || undefined;
         const postedAt =
+          (item.postedAt as string) ||
           (item.posted_at as string) ||
           (item.date as string) ||
           (item.created_at as string) ||
@@ -815,7 +818,7 @@ export class JobScraperAdapter implements IJobScraperGateway {
         }
 
         jobs.push({
-          id: `${source.id}-${index}-${Date.now()}`,
+          id: (item.id as string) || `${source.id}-${index}-${Date.now()}`,
           title,
           company,
           location,
@@ -823,9 +826,9 @@ export class JobScraperAdapter implements IJobScraperGateway {
           jobType: ((item.job_type as string) || (item.type as string) || 'Full-time') as string,
           description: String(description).slice(0, 400),
           url,
-          postedAt: new Date(postedAt).toISOString(),
+          postedAt: JobScraperAdapter.normalizePostedAt(postedAt),
           tags: [...new Set([source.category, ...TagExtractor.extract(title, String(description))])],
-          source: source.name,
+          source: (item.source as string) || source.name,
           category: source.category,
         });
       });
@@ -1441,6 +1444,25 @@ export class JobScraperAdapter implements IJobScraperGateway {
         ? allSources.filter((s) => config.selectedSources.includes(s.id))
         : allSources.filter((s) => s.enabled);
 
+    // Check shared Firestore cache first
+    try {
+      const cachedToday = await JobFirestoreService.getCachedJobsToday();
+      if (cachedToday.length > 0) {
+        console.log('Using today\'s shared cache from Firestore.');
+        return cachedToday;
+      }
+
+      // If no today's cache, check for old data to archive
+      const oldJobs = await JobFirestoreService.getOldJobs();
+      if (oldJobs.length > 0) {
+        const lastDate = oldJobs[0].postedAt.split('T')[0]; // Simple heuristic
+        await JobArchiveService.archiveJobs(oldJobs, lastDate);
+        await JobFirestoreService.clearOldCache();
+      }
+    } catch (error) {
+      console.warn('Firestore cache/archive failed, proceeding with fresh scrape:', error);
+    }
+
     // Remote-first: scrape remote specialist sources first, then the rest
     sourcesToScrape = this.orderSourcesRemoteFirst(sourcesToScrape);
 
@@ -1473,6 +1495,11 @@ export class JobScraperAdapter implements IJobScraperGateway {
 
     await Promise.all(tasks);
     await this.workerPool.drain();
+
+    // Save to shared Firestore cache
+    if (allJobs.length > 0) {
+      JobFirestoreService.saveJobsToFirestore(allJobs).catch((e: Error) => console.error('Failed to save to Firestore:', e));
+    }
 
     const remoteFirstNames = new Set(
       sourcesToScrape

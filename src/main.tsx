@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import './index.css';
 import { initializeContainer } from '@/core/container';
 import { JOB_SOURCES } from '@/data/sources';
+import { AuthProvider } from '@/core/contexts/AuthContext';
 import App from './App';
 
 // Initialize DI container with built-in sources
@@ -13,9 +14,11 @@ initializeContainer(JOB_SOURCES);
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HelmetProvider>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </AuthProvider>
     </HelmetProvider>
   </StrictMode>
 );

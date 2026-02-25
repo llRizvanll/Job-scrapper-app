@@ -5,13 +5,7 @@
 import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import type { Job, JobFilter, JobSource, ScrapeProgress } from '@/core/entities';
 import { getConfig } from '@/config';
-import {
-  scrapeJobsUseCase,
-  filterJobsUseCase,
-  getSourcesUseCase,
-  manageCustomSourcesUseCase,
-  computeStatsUseCase,
-} from '@/core/container';
+import { filterJobsUseCase, getSourcesUseCase, manageCustomSourcesUseCase, computeStatsUseCase } from '@/core/container';
 import { JobCacheService } from '@/core/services/JobCacheService';
 import { SavedJobService } from '@/core/services/SavedJobService';
 
@@ -28,22 +22,6 @@ const DEFAULT_FILTER: JobFilter = {
 // Load from cache on init so first paint shows cached jobs
 function getInitialJobs(): Job[] {
   return JobCacheService.getCachedJobs();
-}
-
-function mergeUniqueJobs(existing: Job[], incoming: Job[]): Job[] {
-  if (incoming.length === 0) return existing;
-  const seen = new Set(
-    existing.map((j) => `${j.title.toLowerCase()}::${j.company.toLowerCase()}::${j.url.toLowerCase()}`)
-  );
-  const merged = [...existing];
-  for (const job of incoming) {
-    const key = `${job.title.toLowerCase()}::${job.company.toLowerCase()}::${job.url.toLowerCase()}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      merged.push(job);
-    }
-  }
-  return merged;
 }
 
 export function useJobsPageViewModel() {
@@ -83,119 +61,77 @@ export function useJobsPageViewModel() {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // On load: show cached jobs immediately; run scrape in parallel (background)
-  // On load: resume active session or start new one parallely
+  // On load: fetch jobs from backend API instead of scraping in the frontend
   useEffect(() => {
-    const runBackgroundScrape = async () => {
-      const { sources: allSourceList } = getSourcesUseCase.execute();
-      const enabledSources = allSourceList.filter((s) => s.enabled).map((s) => s.id);
-      
-      let sourcesToScrape = enabledSources;
-      let isResuming = false;
-      const cachedCount = JobCacheService.getCachedJobs().length;
-
-      // Check for active session to resume
-      const session = JobCacheService.getSession();
-      const SESSION_TTL = 30 * 60 * 1000; // 30 minutes to resume
-      
-      if (session && session.status === 'running' && (Date.now() - session.startedAt < SESSION_TTL)) {
-        // Resume session: filter out completed sources
-        const completedSet = new Set(session.completedSources);
-        sourcesToScrape = enabledSources.filter(id => !completedSet.has(id));
-        isResuming = true;
-        
-        if (sourcesToScrape.length === 0) {
-           JobCacheService.endSession();
-           setBackgroundRefreshing(false);
-           setScrapeProgress(prev => ({ ...prev, isComplete: true }));
-           return;
-        }
-      } else {
-        // Start new session logic
-        const cacheFresh = JobCacheService.isCacheFresh(cacheTtlMs);
-        if (cachedCount > 0 && cacheFresh) {
-          setBackgroundRefreshing(false);
-          setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
-          return;
-        }
-        JobCacheService.startSession(enabledSources.length);
-      }
-
-      if (cachedCount === 0) {
-        setLoading(true);
-      } else {
-        setBackgroundRefreshing(true);
-      }
-      
-      // If resuming, set initial progress to what we know
-      setScrapeProgress((prev) => ({ 
-        ...prev, 
-        current: isResuming ? (enabledSources.length - sourcesToScrape.length) : 0,
-        total: enabledSources.length,
-        isComplete: false 
-      }));
-
+    const fetchJobsFromApi = async () => {
       try {
-        const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
-          {
-            keywords: [], // No keyword filter: fetch all jobs; user filters client-side after load
-            selectedSources: sourcesToScrape,
-            maxJobsPerSource: 100,
-          },
-          (progress) => {
-            // progress.current is local to this batch (0 to sourcesToScrape.length)
-            // We need to map it to global progress if resuming
-            const globalCurrent = isResuming 
-               ? (enabledSources.length - sourcesToScrape.length) + progress.current
-               : progress.current;
+        setLoading(true);
+        setBackgroundRefreshing(true);
+        setScrapeProgress((prev) => ({
+          ...prev,
+          current: 0,
+          total: 1,
+          currentSource: 'Backend API',
+          jobsFound: 0,
+          isComplete: false,
+        }));
 
-            setScrapeProgress({
-               ...progress,
-               current: globalCurrent,
-               total: enabledSources.length
-            });
-
-            if (progress.currentSourceId) {
-              JobCacheService.markSourceComplete(progress.currentSourceId);
-            }
-
-            if ((progress.newJobs?.length || 0) > 0) {
-              setJobs((prev) => {
-                const merged = mergeUniqueJobs(prev, progress.newJobs || []);
-                JobCacheService.saveJobs(merged);
-                return merged;
-              });
-              setLastUpdated(new Date());
-              setHasScraped(true);
-              setShowFilters(true);
-            }
-          }
-        );
-
-        if (scrapedJobs.length > 0) {
-           // Final merge to be safe, though progress updates handle it
-           setJobs(prev => {
-              const merged = mergeUniqueJobs(prev, scrapedJobs);
-              JobCacheService.saveJobs(merged);
-              return merged;
-           });
-           setLastUpdated(new Date());
-           setHasScraped(true);
-           setShowFilters(true);
+        const response = await fetch('http://localhost:3000/jobs');
+        if (!response.ok) {
+          throw new Error(`Failed to fetch jobs: ${response.status}`);
         }
-        
-        JobCacheService.endSession();
-      } catch {
-        // Keep existing jobs (cache)
+
+        const backendJobs: {
+          id: string;
+          title: string;
+          company: string;
+          location: string | null;
+          url: string;
+          description: string | null;
+          postedAt: string | null;
+        }[] = await response.json();
+
+        const mapped: Job[] = backendJobs.map((j) => ({
+          id: j.id,
+          title: j.title,
+          company: j.company,
+          companyLogo: undefined,
+          location: j.location ?? 'Remote',
+          salary: undefined,
+          jobType: 'Full-time',
+          description: j.description ?? '',
+          url: j.url,
+          postedAt: j.postedAt ?? new Date().toISOString(),
+          tags: [],
+          source: 'Backend Aggregator',
+          category: undefined,
+        }));
+
+        setJobs(mapped);
+        JobCacheService.saveJobs(mapped);
+        setLastUpdated(new Date());
+        setHasScraped(true);
+        setShowFilters(true);
+        setScrapeProgress({
+          current: 1,
+          total: 1,
+          currentSource: 'Backend API',
+          jobsFound: mapped.length,
+          isComplete: true,
+        });
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to load jobs from backend API', error);
+        // keep existing cached jobs if API fails
+        setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       } finally {
         setLoading(false);
         setBackgroundRefreshing(false);
-        setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       }
     };
 
-    runBackgroundScrape();
-  }, [cacheTtlMs]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetchJobsFromApi();
+  }, [cacheTtlMs]);
 
   const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
@@ -252,59 +188,70 @@ export function useJobsPageViewModel() {
     });
   }, []);
 
-  // Manual search (e.g. user clicked Search): full loading, then show results or keep cache
+  // Manual refresh: refetch from backend API
   const handleScrape = useCallback(async (): Promise<number> => {
     if (loading) return 0;
-    setLoading(true);
-    setHasScraped(true);
-    setScrapeProgress({
-      current: 0,
-      total: 0,
-      currentSource: '',
-      jobsFound: 0,
-      isComplete: false,
-    });
-
-    const { sources: allSourceList } = getSourcesUseCase.execute();
-    const sourcesToUse =
-      selectedSources.length > 0
-        ? selectedSources
-        : allSourceList.filter((s) => s.enabled).map((s) => s.id);
-
     try {
-      const { jobs: scrapedJobs } = await scrapeJobsUseCase.execute(
-        {
-          keywords: [], // Always fetch all jobs; user filters via search & filters after load
-          selectedSources: sourcesToUse,
-          maxJobsPerSource: 100,
-        },
-        (progress) => {
-          setScrapeProgress(progress);
-          if ((progress.newJobs?.length || 0) > 0) {
-            setJobs((prev) => {
-              const merged = mergeUniqueJobs(prev, progress.newJobs || []);
-              JobCacheService.saveJobs(merged);
-              return merged;
-            });
-            setLastUpdated(new Date());
-          }
-        }
-      );
+      setLoading(true);
+      setHasScraped(true);
+      setScrapeProgress({
+        current: 0,
+        total: 1,
+        currentSource: 'Backend API',
+        jobsFound: 0,
+        isComplete: false,
+      });
 
-      if (scrapedJobs.length > 0) {
-        setJobs(scrapedJobs);
-        JobCacheService.saveJobs(scrapedJobs);
-        setLastUpdated(new Date());
+      const response = await fetch('http://localhost:3000/jobs');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch jobs: ${response.status}`);
       }
-      // If scrape returned empty or failed, jobs stay as-is (cached)
+      const backendJobs: {
+        id: string;
+        title: string;
+        company: string;
+        location: string | null;
+        url: string;
+        description: string | null;
+        postedAt: string | null;
+      }[] = await response.json();
+
+      const mapped: Job[] = backendJobs.map((j) => ({
+        id: j.id,
+        title: j.title,
+        company: j.company,
+        companyLogo: undefined,
+        location: j.location ?? 'Remote',
+        salary: undefined,
+        jobType: 'Full-time',
+        description: j.description ?? '',
+        url: j.url,
+        postedAt: j.postedAt ?? new Date().toISOString(),
+        tags: [],
+        source: 'Backend Aggregator',
+        category: undefined,
+      }));
+
+      setJobs(mapped);
+      JobCacheService.saveJobs(mapped);
+      setLastUpdated(new Date());
+      setScrapeProgress({
+        current: 1,
+        total: 1,
+        currentSource: 'Backend API',
+        jobsFound: mapped.length,
+        isComplete: true,
+      });
+      return mapped.length;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to refresh jobs from backend API', error);
       setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
-      return scrapedJobs.length;
-    } catch {
       return 0;
     } finally {
       setLoading(false);
     }
-  }, [selectedSources, loading]);
+  }, [loading]);
 
   const handleKeywordSelect = useCallback((keyword: string) => {
     setActiveKeywords([keyword]);
