@@ -61,7 +61,9 @@ export function useJobsPageViewModel() {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // On load: fetch jobs from backend API instead of scraping in the frontend
+  // On load: fetch jobs from external REST API (scraper-backend-app.vercel.app)
+  const JOBS_API_URL = 'https://scraper-backend-app.vercel.app/jobs';
+
   useEffect(() => {
     const fetchJobsFromApi = async () => {
       try {
@@ -71,12 +73,12 @@ export function useJobsPageViewModel() {
           ...prev,
           current: 0,
           total: 1,
-          currentSource: 'Backend API',
+          currentSource: 'Scraper API',
           jobsFound: 0,
           isComplete: false,
         }));
 
-        const response = await fetch('http://localhost:3000/jobs');
+        const response = await fetch(JOBS_API_URL);
         if (!response.ok) {
           throw new Error(`Failed to fetch jobs: ${response.status}`);
         }
@@ -89,6 +91,7 @@ export function useJobsPageViewModel() {
           url: string;
           description: string | null;
           postedAt: string | null;
+          skills?: string[];
         }[] = await response.json();
 
         const mapped: Job[] = backendJobs.map((j) => ({
@@ -102,8 +105,8 @@ export function useJobsPageViewModel() {
           description: j.description ?? '',
           url: j.url,
           postedAt: j.postedAt ?? new Date().toISOString(),
-          tags: [],
-          source: 'Backend Aggregator',
+          tags: j.skills ?? [],
+          source: 'Scraper API',
           category: undefined,
         }));
 
@@ -115,13 +118,13 @@ export function useJobsPageViewModel() {
         setScrapeProgress({
           current: 1,
           total: 1,
-          currentSource: 'Backend API',
+          currentSource: 'Scraper API',
           jobsFound: mapped.length,
           isComplete: true,
         });
       } catch (error) {
         // eslint-disable-next-line no-console
-        console.error('Failed to load jobs from backend API', error);
+        console.error('Failed to load jobs from Scraper API', error);
         // keep existing cached jobs if API fails
         setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       } finally {
@@ -188,7 +191,7 @@ export function useJobsPageViewModel() {
     });
   }, []);
 
-  // Manual refresh: refetch from backend API
+  // Manual refresh: refetch from external REST API (scraper-backend-app.vercel.app)
   const handleScrape = useCallback(async (): Promise<number> => {
     if (loading) return 0;
     try {
@@ -197,12 +200,12 @@ export function useJobsPageViewModel() {
       setScrapeProgress({
         current: 0,
         total: 1,
-        currentSource: 'Backend API',
+        currentSource: 'Scraper API',
         jobsFound: 0,
         isComplete: false,
       });
 
-      const response = await fetch('http://localhost:3000/jobs');
+      const response = await fetch(JOBS_API_URL);
       if (!response.ok) {
         throw new Error(`Failed to fetch jobs: ${response.status}`);
       }
@@ -214,6 +217,7 @@ export function useJobsPageViewModel() {
         url: string;
         description: string | null;
         postedAt: string | null;
+        skills?: string[];
       }[] = await response.json();
 
       const mapped: Job[] = backendJobs.map((j) => ({
@@ -227,8 +231,8 @@ export function useJobsPageViewModel() {
         description: j.description ?? '',
         url: j.url,
         postedAt: j.postedAt ?? new Date().toISOString(),
-        tags: [],
-        source: 'Backend Aggregator',
+        tags: j.skills ?? [],
+        source: 'Scraper API',
         category: undefined,
       }));
 
@@ -238,14 +242,14 @@ export function useJobsPageViewModel() {
       setScrapeProgress({
         current: 1,
         total: 1,
-        currentSource: 'Backend API',
+        currentSource: 'Scraper API',
         jobsFound: mapped.length,
         isComplete: true,
       });
       return mapped.length;
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Failed to refresh jobs from backend API', error);
+      console.error('Failed to refresh jobs from Scraper API', error);
       setScrapeProgress((prev) => ({ ...prev, isComplete: true }));
       return 0;
     } finally {
