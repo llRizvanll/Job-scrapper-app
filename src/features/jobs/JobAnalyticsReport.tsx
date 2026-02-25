@@ -79,8 +79,40 @@ function StatCard({ title, value, subtext, icon: Icon, trend }: any) {
 
 export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportProps) {
   const { stats, scraping, topCompanies, postedLast7d } = report;
-
-
+  const filteredSkills =
+    report.jobsBySkill
+      ?.filter(
+        (row) =>
+          ![
+            'Frontend',
+            'Backend',
+            'Fullstack',
+            'DevOps',
+            'Mobile',
+            'Data Science',
+            'Product',
+            'Design',
+            'Marketing',
+            'Sales',
+            'Finance',
+            'HR',
+            'Legal',
+            'Operations',
+            'Writing',
+            'Customer Support',
+            'Remote Specialists',
+            'Greenhouse',
+            'SmartRecruiters',
+            'Lever',
+            'Ashby',
+            'Workable',
+            'Breezy',
+            'Teamtailor',
+            'Remote',
+            'App',
+          ].includes(row.skill) && !row.skill.startsWith('ATS -'),
+      ) || [];
+  const topSkillCount = filteredSkills[0]?.count ?? 1;
 
 
   return (
@@ -195,17 +227,24 @@ export function JobAnalyticsReport({ report, lastUpdated }: JobAnalyticsReportPr
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {report.jobsBySkill && report.jobsBySkill
-                            .filter(row => !['Frontend', 'Backend', 'Fullstack', 'DevOps', 'Mobile', 'Data Science', 'Product', 'Design', 'Marketing', 'Sales', 'Finance', 'HR', 'Legal', 'Operations', 'Writing', 'Customer Support', 'Remote Specialists', 'Greenhouse', 'SmartRecruiters', 'Lever', 'Ashby', 'Workable', 'Breezy', 'Teamtailor', 'Remote', 'App'].includes(row.skill) && !row.skill.startsWith('ATS -'))
-                            .slice(0, 8)
-                            .map(row => (
+                        {filteredSkills.length > 0 ? (
+                          filteredSkills.slice(0, 8).map((row) => (
                             <div key={row.skill}>
-                                <div className="flex justify-between text-sm mb-1.5">
-                                    <span className="font-medium text-slate-700 truncate max-w-[180px]">{row.skill}</span>
-                                </div>
-                                <ProgressBar value={row.count} max={report.jobsBySkill[0]?.count ?? 1} colorClass="bg-rose-500" />
+                              <div className="flex justify-between text-sm mb-1.5">
+                                <span className="font-medium text-slate-700 truncate max-w-[180px]">
+                                  {row.skill}
+                                </span>
+                              </div>
+                              <ProgressBar
+                                value={row.count}
+                                max={topSkillCount}
+                                colorClass="bg-rose-500"
+                              />
                             </div>
-                        ))}
+                          ))
+                        ) : (
+                          <div className="text-sm text-slate-400">Coming soon.</div>
+                        )}
                     </CardContent>
                     </Card>
 

@@ -4,10 +4,23 @@ export function SplashScreen() {
   const [isVisible, setIsVisible] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Show splash at most once per day per browser
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const today = new Date().toISOString().split('T')[0];
+    const lastSeen = window.localStorage.getItem('adune_splash_last_seen');
+    if (lastSeen === today) {
+      setIsVisible(false);
+      return;
+    }
+    window.localStorage.setItem('adune_splash_last_seen', today);
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible) return;
     // If video fails to play or doesn't exist, hide splash after a safety timeout
     const safetyTimeout = setTimeout(() => {
-      if (isVisible) setIsVisible(false);
+      setIsVisible(false);
     }, 8000); // 8 seconds max
 
     return () => clearTimeout(safetyTimeout);

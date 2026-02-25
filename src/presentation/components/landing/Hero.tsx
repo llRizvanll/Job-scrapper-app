@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/core/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export function Hero() {
   const { user } = useAuth();
@@ -32,9 +33,11 @@ export function Hero() {
               work everywhere.
             </h1>
             {!user && (
-              <Button className="h-12 px-8 text-[17px] font-semibold bg-primary-500 hover:bg-primary-400 text-white rounded-full shadow-lg shadow-primary-500/20 transition-all duration-200">
-                Sign up for free
-              </Button>
+              <Link to="/sign-up">
+                <Button className="h-12 px-8 text-[17px] font-semibold bg-primary-500 hover:bg-primary-400 text-white rounded-full shadow-lg shadow-primary-500/20 transition-all duration-200">
+                  Sign up for free
+                </Button>
+              </Link>
             )}
           </div>
         </div>
