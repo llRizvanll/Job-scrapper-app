@@ -66,6 +66,21 @@ export function useJobsPageViewModel() {
 
   useEffect(() => {
     const fetchJobsFromApi = async () => {
+      // Check if cache is fresh (24h by default)
+      if (JobCacheService.isCacheFresh(cacheTtlMs)) {
+        // eslint-disable-next-line no-console
+        console.log('Skipping API fetch: Local cache is fresh.');
+        setScrapeProgress((prev) => ({
+          ...prev,
+          current: 1,
+          total: 1,
+          currentSource: 'Scraper API (Cached)',
+          jobsFound: initialJobs.length,
+          isComplete: true,
+        }));
+        return;
+      }
+
       try {
         setLoading(true);
         setBackgroundRefreshing(true);
@@ -134,7 +149,7 @@ export function useJobsPageViewModel() {
     };
 
     fetchJobsFromApi();
-  }, [cacheTtlMs]);
+  }, [cacheTtlMs, initialJobs.length]);
 
   const filteredJobs = useMemo(() => filterJobsUseCase.execute({
     jobs,
