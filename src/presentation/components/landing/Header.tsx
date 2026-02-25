@@ -51,6 +51,12 @@ export function Header() {
             <Link to="/job-seekers" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               For job seekers
             </Link>
+            <Link
+              to="/resume-builder"
+              className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap"
+            >
+              Resume Builder
+            </Link>
             <Link to="/freelancer-hub" className="text-[15px] font-medium text-gray-600 hover:text-gray-900 transition-colors whitespace-nowrap">
               Freelance Hub
             </Link>
@@ -118,6 +124,13 @@ export function Header() {
           <nav className="flex flex-col gap-2">
             <Link to="/job-seekers" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               For job seekers
+            </Link>
+            <Link
+              to="/resume-builder"
+              className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Resume Builder
             </Link>
             <Link to="/employers" className="text-lg font-medium text-gray-900 py-3 px-2 hover:bg-gray-50 rounded-lg" onClick={() => setIsMobileMenuOpen(false)}>
               For employers

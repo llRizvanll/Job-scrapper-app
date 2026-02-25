@@ -1,0 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+  --print-width: 210mm;
+  --print-height: 297mm;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+@media print {
+  .no-print,
+  header,
+  aside,
+  nav,
+  footer,
+  button {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  @page {
+    @top-left {
+      content: none;
+    }
+
+    @top-center {
+      content: none;
+    }
+
+    @top-right {
+      content: none;
+    }
+
+    @bottom-left {
+      content: none;
+    }
+
+    @bottom-center {
+      content: none;
+    }
+
+    @bottom-right {
+      content: none;
+    }
+  }
+
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  html,
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  main,
+  section.flex-1,
+  .bg-gray-200,
+  .bg-gray-50,
+  .bg-gray-100 {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .resume-page::before,
+  .resume-page::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  main > section,
+  main > section > div {
+    transform: none !important;
+    scale: none !important;
+  }
+
+  .resume-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    margin: 0 !important;
+    padding: 1.5cm 1.8cm !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    font-size: 10pt !important;
+    line-height: 1.35 !important;
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+  }
+
+  .resume-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  section {
+    break-inside: avoid-page;
+    page-break-inside: avoid;
+  }
+
+  .experience-entry {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .work-history-section {
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  section {
+    margin-bottom: 0.35cm !important;
+  }
+
+  .experience-entry {
+    margin-bottom: 0.3cm !important;
+  }
+
+  ul {
+    margin-top: 0.15cm !important;
+    margin-bottom: 0.15cm !important;
+  }
+
+  li {
+    margin-bottom: 0.08cm !important;
+    line-height: 1.3 !important;
+  }
+
+  .resume-header {
+    margin-bottom: 0.4cm !important;
+  }
+
+  .skills-section p {
+    line-height: 1.35 !important;
+  }
+
+  .education-section .grid {
+    gap: 0.2cm !important;
+  }
+
+  .certifications-section .grid {
+    gap: 0.15cm 0.6cm !important;
+  }
+
+  .skills-section .flex-wrap {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.15cm !important;
+    line-height: 1.4 !important;
+  }
+
+  .print\:gap-0 {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  .skills-section span {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0.08cm 0.25cm !important;
+    background: #f3f4f6 !important;
+    border: 0.5pt solid #d1d5db !important;
+    border-radius: 999px !important;
+    font-size: 9pt !important;
+    line-height: 1.3 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+.resume-page {
+  width: var(--print-width);
+  height: var(--print-height);
+  min-height: var(--print-height);
+  max-height: var(--print-height);
+  background: white;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding: 1.5cm 1.8cm;
+  box-sizing: border-box;
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+@media screen {
+  .resume-page::before,
+  .resume-page::after {
+    display: none !important;
+  }
+}
+
