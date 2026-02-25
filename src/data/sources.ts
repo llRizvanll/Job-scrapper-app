@@ -3,13 +3,13 @@ import { buildATSSources } from './atsConfig';
 
 const LEGACY_JOB_SOURCES: JobSource[] = [
   {
-    id: 'vercel-backend',
-    name: 'Vercel Backend',
-    url: 'https://scraper-backend-app.vercel.app/jobs',
+    id: 'firebase-backend',
+    name: 'Firebase Backend',
+    url: 'https://scraper-backend-app--aduneapp-20060.us-east4.hosted.app/jobs',
     type: 'api',
     enabled: true,
     category: 'Backend',
-    description: 'Centralized job scraping backend on Vercel'
+    description: 'Centralized job scraping backend on Firebase'
   }
 ];
 

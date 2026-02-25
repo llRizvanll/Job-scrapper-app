@@ -2,23 +2,24 @@ import { Header } from '@/presentation/components/landing/Header';
 import { Footer } from '@/presentation/components/landing/Footer';
 import { Button } from '@/components/ui/button';
 // import { Input } from '@/components/ui/input'; // Removing unused Input
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { authService } from '@/core/services/authService';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/core/contexts/AuthContext';
-import { useEffect } from 'react';
 
 export function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
+  const from = (location.state as any)?.from?.pathname || '/';
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate('/');
+      navigate(from, { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, from]);
 
   const handleGoogleLogin = async () => {
     setIsLoading(true);
@@ -32,7 +33,7 @@ export function LoginPage() {
 
     if (user) {
       toast.success('Logged in successfully!');
-      navigate('/');
+      navigate(from, { replace: true });
     }
   };
 

@@ -61,8 +61,8 @@ export function useJobsPageViewModel() {
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // On load: fetch jobs from external REST API (scraper-backend-app.vercel.app)
-  const JOBS_API_URL = 'https://scraper-backend-app.vercel.app/jobs';
+  // On load: fetch jobs from external REST API (Firebase Backend)
+  const JOBS_API_URL = 'https://scraper-backend-app--aduneapp-20060.us-east4.hosted.app/jobs';
 
   useEffect(() => {
     const fetchJobsFromApi = async () => {
@@ -191,7 +191,7 @@ export function useJobsPageViewModel() {
     });
   }, []);
 
-  // Manual refresh: refetch from external REST API (scraper-backend-app.vercel.app)
+  // Manual refresh: refetch from external REST API (Firebase Backend)
   const handleScrape = useCallback(async (): Promise<number> => {
     if (loading) return 0;
     try {
